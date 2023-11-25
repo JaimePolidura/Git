@@ -4,12 +4,29 @@ import (
 	"git/src/utils"
 	"gopkg.in/ini.v1"
 	"os"
+	"path/filepath"
+	"strings"
 )
 
 type Repository struct {
 	WorkTree string
 	GitDir   string
 	Config   *ini.File
+}
+
+func FindCurrentRepository(currentPath string) *Repository {
+	paths := strings.Split(currentPath, string(filepath.Separator))
+
+	for i := 0; i < len(paths); i++ {
+		actualPath := utils.JoinStrings(paths[:len(paths)-i])
+		if _, err := os.Open(utils.Path(actualPath, ".git")); err == nil {
+			return CreateRepositoryObject(actualPath)
+		}
+	}
+
+	utils.ExitError("Cannot find git repository")
+
+	return nil
 }
 
 func CreateRepositoryObject(path string) *Repository {
@@ -43,20 +60,21 @@ func CreateRepositoryObject(path string) *Repository {
 	}
 }
 
-func InitiliazeRepository(path string) *Repository {
-	gitDir := utils.Path(path, ".git")
+func InitializeRepository(workTreePath string) *Repository {
+	gitDir := utils.Path(workTreePath, ".git")
 
-	workDirFile, err := os.Open(path)
-	utils.Check(err, "Cannot open "+path)
+	workDirFile, err := os.Open(workTreePath)
+	utils.Check(err, "Cannot open "+workTreePath)
 	defer workDirFile.Close()
 
 	stat, err := workDirFile.Stat()
-	utils.Check(err, "Cannot get stat from "+path)
+	utils.Check(err, "Cannot get stat from "+workTreePath)
 
 	if !stat.IsDir() {
-		utils.ExitError(path + "is not a directory")
+		utils.ExitError(workTreePath + "is not a directory")
 	}
 
+	utils.CreateDirIfNotExists(workTreePath, ".git")
 	utils.CreateDirIfNotExists(gitDir, "branches")
 	utils.CreateDirIfNotExists(gitDir, "refs")
 	utils.CreateDirIfNotExists(utils.Path(gitDir, "refs"), "heads")
@@ -72,7 +90,7 @@ func InitiliazeRepository(path string) *Repository {
 	addDefaultConfigToIniFile(config)
 
 	return &Repository{
-		WorkTree: path,
+		WorkTree: workTreePath,
 		GitDir:   gitDir,
 		Config:   config,
 	}
@@ -85,4 +103,6 @@ func addDefaultConfigToIniFile(iniFile *ini.File) {
 	section.NewKey("repositoryformatversion", "0")
 	section.NewKey("filemode", "fals")
 	section.NewKey("bare", "false")
+
+	iniFile.SaveTo("./.git/config")
 }

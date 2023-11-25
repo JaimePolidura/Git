@@ -1,7 +1,8 @@
-package src
+package main
 
 import (
 	"fmt"
+	"git/src/commands"
 	"os"
 )
 
@@ -13,11 +14,6 @@ func main() {
 
 	switch command := os.Args[1]; command {
 	case "init":
-		Init()
-
+		commands.Init()
 	}
-}
-
-func Init() {
-
 }

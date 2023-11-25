@@ -6,6 +6,15 @@ import (
 	"path/filepath"
 )
 
+func JoinStrings(strings []string) string {
+	resultString := ""
+	for _, actualString := range strings {
+		resultString = resultString + actualString
+	}
+
+	return resultString
+}
+
 func CreateDirIfNotExists(path string, fileName string) {
 	fullPathFileName := Path(path, fileName)
 	Check(os.Mkdir(fullPathFileName, os.ModePerm), "Cannot create file "+fullPathFileName)
