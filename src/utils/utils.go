@@ -37,8 +37,18 @@ func CreateFileIfNotExistsWithContent(path string, fileName string, initContent 
 	Check(err, "Cannot write "+initContent+" to "+fileFullPath)
 }
 
+func CurrentPath() string {
+	currentPath, err := os.Getwd()
+	Check(err, "Cannot get the current path")
+	return currentPath
+}
+
 func Path(path string, fileName string) string {
 	return filepath.Join(path, fileName)
+}
+
+func Paths(paths ...string) string {
+	return filepath.Join(paths...)
 }
 
 func Check(err error, message string) {

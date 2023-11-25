@@ -1,10 +1,17 @@
 package repository
 
 import (
+	"bufio"
+	"compress/zlib"
+	"crypto/sha1"
+	"encoding/hex"
+	"errors"
+	"git/src/objects"
 	"git/src/utils"
 	"gopkg.in/ini.v1"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -14,19 +21,90 @@ type Repository struct {
 	Config   *ini.File
 }
 
-func FindCurrentRepository(currentPath string) *Repository {
+func (r *Repository) WriteObject(object *objects.Object) (string, error) {
+	serializeData := objects.Serialize(object)
+	sha1Hasher := sha1.New()
+	sha1Hasher.Write(serializeData)
+	shaHex := hex.EncodeToString(sha1Hasher.Sum(nil))
+	prefix, remainder := shaHex[:2], shaHex[2:]
+
+	if err := os.Mkdir(utils.Paths(r.GitDir, "objects", prefix, remainder), 0777); err != nil {
+		return "", err
+	}
+
+	file, err := os.Open(utils.Paths(r.GitDir, "objects", prefix, remainder))
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+	zlibObjectFileWriter := zlib.NewWriter(file)
+
+	_, err = zlibObjectFileWriter.Write(serializeData)
+	if err != nil {
+		return "", err
+	}
+
+	return shaHex, nil
+}
+
+func (r *Repository) ReadObject(hash string) (*objects.Object, error) {
+	prefix, remainder := hash[:2], hash[2:]
+	objectPath := utils.Paths(r.GitDir, "objects", prefix, remainder)
+	objectFile, err := os.Open(objectPath)
+	defer objectFile.Close()
+	if err != nil {
+		return nil, errors.New("Cannot open object file: " + hash)
+	}
+	objectFileState, err := objectFile.Stat()
+	if err != nil {
+		return nil, errors.New("Cannot get stat from object file: " + hash)
+	}
+	if objectFileState.IsDir() {
+		return nil, errors.New("Object file: " + hash + " cannot be a dir")
+	}
+
+	objectFileZlibReader, _ := zlib.NewReader(objectFile)
+	defer objectFileZlibReader.Close()
+
+	objectFileZlibReaderBuffer := bufio.NewReader(objectFileZlibReader)
+
+	objectTypeBytes, err := objectFileZlibReaderBuffer.ReadBytes('\x20')
+	if err != nil {
+		return nil, err
+	}
+	objectType, err := objects.GetObjectTypeByString(string(objectTypeBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	objectLengthBytes, err := objectFileZlibReaderBuffer.ReadBytes('\x00')
+	if err != nil {
+		return nil, err
+	}
+	objectLengthInt, err := strconv.Atoi(string(objectLengthBytes))
+	if err != nil {
+		return nil, err
+	}
+
+	restData, err := objectFileZlibReaderBuffer.ReadBytes('\x00')
+	if err != nil {
+		return nil, err
+	}
+
+	return &objects.Object{Type: objectType, Length: objectLengthInt, Data: restData}, nil
+}
+
+func FindCurrentRepository(currentPath string) (*Repository, error) {
 	paths := strings.Split(currentPath, string(filepath.Separator))
 
 	for i := 0; i < len(paths); i++ {
 		actualPath := utils.JoinStrings(paths[:len(paths)-i])
 		if _, err := os.Open(utils.Path(actualPath, ".git")); err == nil {
-			return CreateRepositoryObject(actualPath)
+			return CreateRepositoryObject(actualPath), nil
 		}
 	}
 
-	utils.ExitError("Cannot find git repository")
-
-	return nil
+	return nil, errors.New("fatal: not a git repository (or any of the parent directories): .git")
 }
 
 func CreateRepositoryObject(path string) *Repository {
