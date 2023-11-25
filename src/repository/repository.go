@@ -12,7 +12,7 @@ type Repository struct {
 	Config   *ini.File
 }
 
-func CreateRepositoryObject(path string, force bool) *Repository {
+func CreateRepositoryObject(path string) *Repository {
 	workTree := path
 	gitDir := utils.Path(path, ".git")
 
