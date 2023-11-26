@@ -19,5 +19,10 @@ func main() {
 		commands.CatFile(os.Args)
 	case "hash-object":
 		commands.HashObject(os.Args)
+	case "log":
+		commands.Log(os.Args)
+	case "ls-tree":
+		commands.LsTree(os.Args)
+
 	}
 }

@@ -56,6 +56,8 @@ func DeserializeObject(reader io.Reader) (GitObject, error) {
 		gitObject, err = deserializeBlobObject(commonObject, pendingToDeserialize)
 	case COMMIT:
 		gitObject, err = deserializeCommitObject(commonObject, pendingToDeserialize)
+	case TREE:
+		gitObject, err = deserializeTreeObject(commonObject, pendingToDeserialize)
 	}
 
 	return gitObject, err
@@ -107,7 +109,7 @@ func getObjectTypeByString(objectTypeString string) (ObjectType, error) {
 	}
 }
 
-func KeyValueListSerialize(kvMap *utils.NavigationMap[string, string]) []byte {
+func keyValueListSerialize(kvMap *utils.NavigationMap[string, string]) []byte {
 	result := ""
 
 	for _, key := range kvMap.Keys() {
@@ -118,7 +120,7 @@ func KeyValueListSerialize(kvMap *utils.NavigationMap[string, string]) []byte {
 	return []byte(result + "\n")
 }
 
-func KeyValueListDeserialize(bytes []byte) (*utils.NavigationMap[string, string], []byte) {
+func keyValueListDeserialize(bytes []byte) (*utils.NavigationMap[string, string], []byte) {
 	return keyValueListParserDeserializeRecursive(bytes, 0, utils.CreateNavigationMap[string, string]())
 }
 
