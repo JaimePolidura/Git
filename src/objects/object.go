@@ -18,6 +18,12 @@ const (
 	TAG    ObjectType = "tag"
 )
 
+type GitObject interface {
+	Type() ObjectType
+	Length() int
+	Data() []byte
+}
+
 type SerializableObject interface {
 	Serialize() []byte
 }
@@ -32,20 +38,27 @@ func (o *Object) serializeHeader() []byte {
 	return []byte(string(o.Type) + " " + strconv.Itoa(o.Length) + string('\x00'))
 }
 
-func DeserializeObject(reader io.Reader) (*Object, error) {
+func DeserializeObjectWithType[T GitObject](reader io.Reader) (T, error) {
+	gitObject, err := DeserializeObject(reader)
+	return gitObject.(T), err
+}
+
+func DeserializeObject(reader io.Reader) (GitObject, error) {
 	commonObject, pendingToDeserialize, err := DeserializeObjectCommonHeader(reader)
+	var gitObject GitObject
+
 	if err != nil {
-		return nil, err
+		return gitObject, err
 	}
 
 	switch commonObject.Type {
 	case BLOB:
-		deserializeBlobObject(commonObject, pendingToDeserialize)
+		gitObject, err = deserializeBlobObject(commonObject, pendingToDeserialize)
 	case COMMIT:
-		deserializeCommitObject(commonObject, pendingToDeserialize)
+		gitObject, err = deserializeCommitObject(commonObject, pendingToDeserialize)
 	}
 
-	return nil, errors.New("Onject type deserializer " + string(commonObject.Type) + "not found")
+	return gitObject, err
 }
 
 func DeserializeObjectCommonHeader(reader io.Reader) (*Object, []byte, error) {

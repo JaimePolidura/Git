@@ -39,16 +39,16 @@ func (r *Repository) WriteObject(object objects.SerializableObject) (string, err
 	defer file.Close()
 
 	var compressedBuffer bytes.Buffer
-	zlib := zlib.NewWriter(&compressedBuffer)
-	defer zlib.Close()
+	zlibWriter := zlib.NewWriter(&compressedBuffer)
+	defer zlibWriter.Close()
 
-	if _, err = zlib.Write(serializeData); err != nil {
+	if _, err = zlibWriter.Write(serializeData); err != nil {
 		return "", err
 	}
 
-	zlib.Flush()
+	zlibWriter.Flush()
 
-	if err := zlib.Close(); err != nil {
+	if err := zlibWriter.Close(); err != nil {
 		return "", err
 	}
 
@@ -59,7 +59,7 @@ func (r *Repository) WriteObject(object objects.SerializableObject) (string, err
 	}
 }
 
-func (r *Repository) ReadObject(hash string) (*objects.Object, error) {
+func (r *Repository) ReadObject(hash string) (objects.GitObject, error) {
 	prefix, remainder := hash[:2], hash[2:]
 	objectPath := utils.Paths(r.GitDir, "objects", prefix, remainder)
 	objectFile, err := os.Open(objectPath)

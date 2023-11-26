@@ -15,16 +15,16 @@ func CatFile(args []string) {
 	sha := args[2]
 
 	currentPath := utils.CurrentPath()
-	repository, err := repository.FindCurrentRepository(currentPath)
+	currentRepository, err := repository.FindCurrentRepository(currentPath)
 
 	if err != nil {
 		utils.ExitError(err.Error())
 	}
-
-	object, err := repository.ReadObject(sha)
+	
+	object, err := currentRepository.ReadObject(sha)
 	if err != nil {
 		utils.ExitError("Cannot read object: " + err.Error())
 	}
 
-	os.Stdout.Write(object.Data)
+	_, _ = os.Stdout.Write(object.Data())
 }

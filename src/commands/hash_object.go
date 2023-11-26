@@ -16,7 +16,7 @@ func HashObject(args []string) {
 		os.Exit(1)
 	}
 
-	repository, err := repository.FindCurrentRepository(utils.CurrentPath())
+	currentRepository, err := repository.FindCurrentRepository(utils.CurrentPath())
 	utils.Check(err, "fatal: not a git repository (or any of the parent directories): .git")
 
 	filePath := args[5]
@@ -29,10 +29,10 @@ func HashObject(args []string) {
 
 	object := objects.CreateBlobObject(bytesFromFile)
 
-	sha, err := repository.WriteObject(object)
+	sha, err := currentRepository.WriteObject(object)
 	if err != nil {
 		utils.ExitError("Error while writting object")
 	}
 
-	os.Stdout.Write([]byte(sha))
+	_, _ = os.Stdout.Write([]byte(sha))
 }
