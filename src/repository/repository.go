@@ -9,10 +9,8 @@ import (
 	"git/src/objects"
 	"git/src/utils"
 	"gopkg.in/ini.v1"
-	"io/ioutil"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 )
 
@@ -22,8 +20,8 @@ type Repository struct {
 	Config   *ini.File
 }
 
-func (r *Repository) WriteObject(object *objects.Object) (string, error) {
-	serializeData := objects.Serialize(object)
+func (r *Repository) WriteObject(object objects.SerializableObject) (string, error) {
+	serializeData := object.Serialize()
 	sha1Hasher := sha1.New()
 	sha1Hasher.Write(serializeData)
 	shaHex := hex.EncodeToString(sha1Hasher.Sum(nil))
@@ -83,35 +81,7 @@ func (r *Repository) ReadObject(hash string) (*objects.Object, error) {
 	}
 	defer objectFileZlibReader.Close()
 
-	bytesDecompressed, err := ioutil.ReadAll(objectFileZlibReader)
-	if err != nil {
-		return nil, err
-	}
-
-	objectTypeBytes, offset, err := utils.ReadUntilAscii(bytesDecompressed, 0, 32)
-	if err != nil {
-		return nil, err
-	}
-	objectType, err := objects.GetObjectTypeByString(string(objectTypeBytes))
-	if err != nil {
-		return nil, err
-	}
-
-	objectLengthBytes, offset, err := utils.ReadUntilAscii(bytesDecompressed, offset, 0)
-	if err != nil {
-		return nil, err
-	}
-	objectLengthInt, err := strconv.Atoi(string(objectLengthBytes))
-	if err != nil {
-		return nil, err
-	}
-
-	restData, offset, err := utils.ReadUntilAscii(bytesDecompressed, offset, 0)
-	if err != nil {
-		return nil, err
-	}
-
-	return &objects.Object{Type: objectType, Length: objectLengthInt, Data: restData}, nil
+	return objects.DeserializeObject(objectFileZlibReader)
 }
 
 func FindCurrentRepository(currentPath string) (*Repository, error) {

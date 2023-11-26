@@ -24,15 +24,10 @@ func HashObject(args []string) {
 	utils.Check(err, "Error while opening the file")
 	defer file.Close()
 
-	objectType, err := objects.GetObjectTypeByString(args[3])
-	if err != nil {
-		utils.ExitError("Unknown type")
-	}
-
 	buffer := bufio.NewReader(file)
 	bytesFromFile, _ := buffer.ReadBytes('\x00')
 
-	object := &objects.Object{Type: objectType, Length: len(bytesFromFile), Data: bytesFromFile}
+	object := objects.CreateBlobObject(bytesFromFile)
 
 	sha, err := repository.WriteObject(object)
 	if err != nil {

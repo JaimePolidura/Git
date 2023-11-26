@@ -38,7 +38,17 @@ func CreateFileIfNotExistsWithContent(path string, fileName string, initContent 
 	Check(err, "Cannot write "+initContent+" to "+fileFullPath)
 }
 
-func ReadUntilAscii(bytes []byte, offset int, char uint8) ([]byte, int, error) {
+func FindIndex(bytes []byte, offset int, char uint8) int {
+	for i := offset; i < len(bytes); i++ {
+		if bytes[i] == char {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func ReadUntil(bytes []byte, offset int, char uint8) ([]byte, int, error) {
 	untilEof := char == 0
 	if offset >= len(bytes) {
 		return nil, offset, errors.New("Incorrect bytes size")

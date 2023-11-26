@@ -2,6 +2,9 @@ package objects
 
 import (
 	"errors"
+	"git/src/utils"
+	"io"
+	"io/ioutil"
 	"strconv"
 	"strings"
 )
@@ -15,6 +18,10 @@ const (
 	TAG    ObjectType = "tag"
 )
 
+type SerializableObject interface {
+	Serialize() []byte
+}
+
 type Object struct {
 	Type   ObjectType
 	Length int
@@ -25,7 +32,54 @@ func (o *Object) serializeHeader() []byte {
 	return []byte(string(o.Type) + " " + strconv.Itoa(o.Length) + string('\x00'))
 }
 
-func GetObjectTypeByString(objectTypeString string) (ObjectType, error) {
+func DeserializeObject(reader io.Reader) (*Object, error) {
+	commonObject, pendingToDeserialize, err := DeserializeObjectCommonHeader(reader)
+	if err != nil {
+		return nil, err
+	}
+
+	switch commonObject.Type {
+	case BLOB:
+		deserializeBlobObject(commonObject, pendingToDeserialize)
+	case COMMIT:
+		deserializeCommitObject(commonObject, pendingToDeserialize)
+	}
+
+	return nil, errors.New("Onject type deserializer " + string(commonObject.Type) + "not found")
+}
+
+func DeserializeObjectCommonHeader(reader io.Reader) (*Object, []byte, error) {
+	bytesDecompressed, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return nil, []byte{}, err
+	}
+
+	objectTypeBytes, offset, err := utils.ReadUntil(bytesDecompressed, 0, 32)
+	if err != nil {
+		return nil, []byte{}, err
+	}
+	objectType, err := getObjectTypeByString(string(objectTypeBytes))
+	if err != nil {
+		return nil, []byte{}, err
+	}
+
+	objectLengthBytes, offset, err := utils.ReadUntil(bytesDecompressed, offset, 0)
+	if err != nil {
+		return nil, []byte{}, err
+	}
+	objectLengthInt, err := strconv.Atoi(string(objectLengthBytes))
+	if err != nil {
+		return nil, []byte{}, err
+	}
+	restData, offset, err := utils.ReadUntil(bytesDecompressed, offset, 0)
+	if err != nil {
+		return nil, []byte{}, err
+	}
+
+	return &Object{Type: objectType, Length: objectLengthInt}, restData, nil
+}
+
+func getObjectTypeByString(objectTypeString string) (ObjectType, error) {
 	switch strings.ToLower(objectTypeString) {
 	case "commit":
 		return COMMIT, nil
@@ -40,19 +94,32 @@ func GetObjectTypeByString(objectTypeString string) (ObjectType, error) {
 	}
 }
 
-func Serialize(object *Object) []byte {
-	bytes := object.serializeHeader()
+func KeyValueListSerialize(kvMap *utils.NavigationMap[string, string]) []byte {
+	result := ""
 
-	switch object.Type {
-	case COMMIT:
-		return nil
-	case BLOB:
-		return append(bytes, serializeBlob(object)...)
-	case TREE:
-		return nil
-	case TAG:
-		return nil
+	for _, key := range kvMap.Keys() {
+		value := kvMap.Get(key)
+		result = result + key + " " + value + "\n"
 	}
 
-	panic("wtf?")
+	return []byte(result + "\n")
+}
+
+func KeyValueListDeserialize(bytes []byte) (*utils.NavigationMap[string, string], []byte) {
+	return keyValueListParserDeserializeRecursive(bytes, 0, utils.CreateNavigationMap[string, string]())
+}
+
+func keyValueListParserDeserializeRecursive(bytes []byte, offset int, parsed *utils.NavigationMap[string, string]) (*utils.NavigationMap[string, string], []byte) {
+	indexEndKey := utils.FindIndex(bytes, offset, 32)
+	indexEndValue := utils.FindIndex(bytes, offset, 10)
+
+	if indexEndValue > indexEndKey && indexEndKey > 0 && indexEndValue > 0 {
+		key := string(bytes[offset:indexEndKey])
+		value := string(bytes[indexEndKey+1 : indexEndValue])
+		parsed.Put(key, value)
+
+		return keyValueListParserDeserializeRecursive(bytes, indexEndValue+1, parsed)
+	} else { //Blank line -> end of key/value
+		return parsed, bytes[offset+1:]
+	}
 }
