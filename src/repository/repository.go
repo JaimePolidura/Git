@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"bufio"
+	"bytes"
 	"compress/zlib"
 	"crypto/sha1"
 	"encoding/hex"
@@ -9,6 +9,7 @@ import (
 	"git/src/objects"
 	"git/src/utils"
 	"gopkg.in/ini.v1"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -27,24 +28,37 @@ func (r *Repository) WriteObject(object *objects.Object) (string, error) {
 	sha1Hasher.Write(serializeData)
 	shaHex := hex.EncodeToString(sha1Hasher.Sum(nil))
 	prefix, remainder := shaHex[:2], shaHex[2:]
+	objectPath := utils.Paths(r.GitDir, "objects", prefix, remainder)
 
-	if err := os.Mkdir(utils.Paths(r.GitDir, "objects", prefix, remainder), 0777); err != nil {
+	if err := os.MkdirAll(filepath.Dir(objectPath), os.ModePerm); err != nil {
 		return "", err
 	}
 
-	file, err := os.Open(utils.Paths(r.GitDir, "objects", prefix, remainder))
+	file, err := os.Create(objectPath)
 	if err != nil {
 		return "", err
 	}
 	defer file.Close()
-	zlibObjectFileWriter := zlib.NewWriter(file)
 
-	_, err = zlibObjectFileWriter.Write(serializeData)
-	if err != nil {
+	var compressedBuffer bytes.Buffer
+	zlib := zlib.NewWriter(&compressedBuffer)
+	defer zlib.Close()
+
+	if _, err = zlib.Write(serializeData); err != nil {
 		return "", err
 	}
 
-	return shaHex, nil
+	zlib.Flush()
+
+	if err := zlib.Close(); err != nil {
+		return "", err
+	}
+
+	if _, err = file.Write(compressedBuffer.Bytes()); err != nil {
+		return "", err
+	} else {
+		return shaHex, nil
+	}
 }
 
 func (r *Repository) ReadObject(hash string) (*objects.Object, error) {
@@ -63,12 +77,18 @@ func (r *Repository) ReadObject(hash string) (*objects.Object, error) {
 		return nil, errors.New("Object file: " + hash + " cannot be a dir")
 	}
 
-	objectFileZlibReader, _ := zlib.NewReader(objectFile)
+	objectFileZlibReader, err := zlib.NewReader(objectFile)
+	if err != nil {
+		return nil, err
+	}
 	defer objectFileZlibReader.Close()
 
-	objectFileZlibReaderBuffer := bufio.NewReader(objectFileZlibReader)
+	bytesDecompressed, err := ioutil.ReadAll(objectFileZlibReader)
+	if err != nil {
+		return nil, err
+	}
 
-	objectTypeBytes, err := objectFileZlibReaderBuffer.ReadBytes('\x20')
+	objectTypeBytes, offset, err := utils.ReadUntilAscii(bytesDecompressed, 0, 32)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +97,7 @@ func (r *Repository) ReadObject(hash string) (*objects.Object, error) {
 		return nil, err
 	}
 
-	objectLengthBytes, err := objectFileZlibReaderBuffer.ReadBytes('\x00')
+	objectLengthBytes, offset, err := utils.ReadUntilAscii(bytesDecompressed, offset, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +106,7 @@ func (r *Repository) ReadObject(hash string) (*objects.Object, error) {
 		return nil, err
 	}
 
-	restData, err := objectFileZlibReaderBuffer.ReadBytes('\x00')
+	restData, offset, err := utils.ReadUntilAscii(bytesDecompressed, offset, 0)
 	if err != nil {
 		return nil, err
 	}

@@ -6,12 +6,13 @@ import (
 	"os"
 )
 
+// CatFile Args: main.go cat-file <sha>
 func CatFile(args []string) {
-	if len(args) != 4 {
+	if len(args) != 3 {
 		utils.ExitError("Invalid arguemnts cat-file <type> <sha>")
 	}
 
-	sha := args[3]
+	sha := args[2]
 
 	currentPath := utils.CurrentPath()
 	repository, err := repository.FindCurrentRepository(currentPath)

@@ -2,6 +2,7 @@ package objects
 
 import (
 	"errors"
+	"strconv"
 	"strings"
 )
 
@@ -20,6 +21,10 @@ type Object struct {
 	Data   []byte
 }
 
+func (o *Object) serializeHeader() []byte {
+	return []byte(string(o.Type) + " " + strconv.Itoa(o.Length) + string('\x00'))
+}
+
 func GetObjectTypeByString(objectTypeString string) (ObjectType, error) {
 	switch strings.ToLower(objectTypeString) {
 	case "commit":
@@ -36,11 +41,13 @@ func GetObjectTypeByString(objectTypeString string) (ObjectType, error) {
 }
 
 func Serialize(object *Object) []byte {
+	bytes := object.serializeHeader()
+
 	switch object.Type {
 	case COMMIT:
 		return nil
 	case BLOB:
-		return serializeBlob(object)
+		return append(bytes, serializeBlob(object)...)
 	case TREE:
 		return nil
 	case TAG:

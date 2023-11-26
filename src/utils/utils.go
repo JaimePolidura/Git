@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -35,6 +36,33 @@ func CreateFileIfNotExistsWithContent(path string, fileName string, initContent 
 
 	_, err = file.Write([]byte(initContent))
 	Check(err, "Cannot write "+initContent+" to "+fileFullPath)
+}
+
+func ReadUntilAscii(bytes []byte, offset int, char uint8) ([]byte, int, error) {
+	untilEof := char == 0
+	if offset >= len(bytes) {
+		return nil, offset, errors.New("Incorrect bytes size")
+	}
+
+	result := make([]byte, 0)
+	actual := bytes[offset]
+
+	for actual != char {
+		result = append(result, actual)
+
+		offset = offset + 1
+
+		if offset >= len(bytes) && !untilEof {
+			return result, offset, errors.New("Unexpected EOF")
+		}
+		if offset >= len(bytes) && untilEof {
+			return result, offset + 1, nil
+		}
+
+		actual = bytes[offset]
+	}
+
+	return result, offset + 1, nil
 }
 
 func CurrentPath() string {

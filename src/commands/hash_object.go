@@ -2,8 +2,6 @@ package commands
 
 import (
 	"bufio"
-	"crypto/sha1"
-	"encoding/hex"
 	"fmt"
 	"git/src/objects"
 	"git/src/repository"
@@ -13,12 +11,13 @@ import (
 
 // HashObject Args: main.go hash-object -t blob -w <blob path>
 func HashObject(args []string) {
-	if len(args) != 7 {
+	if len(args) != 6 {
 		fmt.Fprintf(os.Stderr, "Invalid args. Use: hash-object -t blob -w <blob path>\n")
 		os.Exit(1)
 	}
 
 	repository, err := repository.FindCurrentRepository(utils.CurrentPath())
+	utils.Check(err, "fatal: not a git repository (or any of the parent directories): .git")
 
 	filePath := args[5]
 	file, err := os.Open(filePath)
@@ -31,12 +30,7 @@ func HashObject(args []string) {
 	}
 
 	buffer := bufio.NewReader(file)
-	bytesFromFile, err := buffer.ReadBytes('\x00')
-	utils.Check(err, "Error while reading the bytes of the file")
-
-	hasher := sha1.New()
-	hasher.Write(bytesFromFile)
-	shaHex := hex.EncodeToString(hasher.Sum(nil))
+	bytesFromFile, _ := buffer.ReadBytes('\x00')
 
 	object := &objects.Object{Type: objectType, Length: len(bytesFromFile), Data: bytesFromFile}
 
