@@ -8,10 +8,11 @@ import (
 	"errors"
 	"git/src/objects"
 	"git/src/utils"
-	"gopkg.in/ini.v1"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/ini.v1"
 )
 
 type Repository struct {
@@ -59,6 +60,33 @@ func (r *Repository) WriteObject(object objects.GitObject) (string, error) {
 	}
 }
 
+func (r *Repository) ReadTreeObject(hash string) (objects.TreeObject, error) {
+	gitObject, err := r.ReadObject(hash)
+	if err != nil || gitObject.Type() != objects.BLOB {
+		return objects.TreeObject{}, err
+	}
+
+	return gitObject.(objects.TreeObject), nil
+}
+
+func (r *Repository) ReadBlobObject(hash string) (objects.BlobObject, error) {
+	gitObject, err := r.ReadObject(hash)
+	if err != nil || gitObject.Type() != objects.BLOB {
+		return objects.BlobObject{}, err
+	}
+
+	return gitObject.(objects.BlobObject), nil
+}
+
+func (r *Repository) ReadCommitObject(hash string) (objects.CommitObject, error) {
+	gitObject, err := r.ReadObject(hash)
+	if err != nil || gitObject.Type() != objects.COMMIT {
+		return objects.CommitObject{}, err
+	}
+
+	return gitObject.(objects.CommitObject), nil
+}
+
 func (r *Repository) ReadObject(hash string) (objects.GitObject, error) {
 	prefix, remainder := hash[:2], hash[2:]
 	objectPath := utils.Paths(r.GitDir, "objects", prefix, remainder)
@@ -84,17 +112,17 @@ func (r *Repository) ReadObject(hash string) (objects.GitObject, error) {
 	return objects.DeserializeObject(objectFileZlibReader)
 }
 
-func FindCurrentRepository(currentPath string) (*Repository, error) {
+func FindCurrentRepository(currentPath string) (*Repository, string, error) {
 	paths := strings.Split(currentPath, string(filepath.Separator))
 
 	for i := 0; i < len(paths); i++ {
 		actualPath := utils.JoinStrings(paths[:len(paths)-i])
 		if _, err := os.Open(utils.Path(actualPath, ".git")); err == nil {
-			return CreateRepositoryObject(actualPath), nil
+			return CreateRepositoryObject(actualPath), actualPath, nil
 		}
 	}
 
-	return nil, errors.New("fatal: not a git repository (or any of the parent directories): .git")
+	return nil, "", errors.New("fatal: not a git repository (or any of the parent directories): .git")
 }
 
 func CreateRepositoryObject(path string) *Repository {

@@ -15,13 +15,13 @@ func LsTree(args []string) {
 
 	sha := args[3]
 
-	currentRepository, err := repository.FindCurrentRepository(utils.CurrentPath())
+	currentRepository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
 	if err != nil {
 		utils.ExitError(err.Error())
 	}
 
 	gitObject := getTreeGitObject(currentRepository, sha)
-	
+
 	printEntriesRecursive(currentRepository, gitObject.Entries)
 }
 

@@ -16,7 +16,7 @@ func HashObject(args []string) {
 		os.Exit(1)
 	}
 
-	currentRepository, err := repository.FindCurrentRepository(utils.CurrentPath())
+	currentRepository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
 	utils.Check(err, "fatal: not a git repository (or any of the parent directories): .git")
 
 	filePath := args[5]

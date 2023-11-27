@@ -14,7 +14,7 @@ func Log(args []string) {
 	}
 
 	currentSha := args[2]
-	currentRepository, err := repository.FindCurrentRepository(utils.CurrentPath())
+	currentRepository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
 	currentCommitHasParent := true
 
 	if err != nil {

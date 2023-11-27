@@ -52,6 +52,10 @@ func (t TreeEntry) formatPathToSort() string {
 	}
 }
 
+func (t TreeEntry) GetPermissions() int {
+	return t.Mode & 0x0F
+}
+
 func (t TreeEntry) IsDir() bool {
 	return strings.HasPrefix(t.Path, "10")
 }

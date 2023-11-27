@@ -14,7 +14,7 @@ func CatFile(args []string) {
 
 	sha := args[2]
 	currentPath := utils.CurrentPath()
-	currentRepository, err := repository.FindCurrentRepository(currentPath)
+	currentRepository, _, err := repository.FindCurrentRepository(currentPath)
 
 	if err != nil {
 		utils.ExitError(err.Error())

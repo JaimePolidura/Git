@@ -23,6 +23,7 @@ func main() {
 		commands.Log(os.Args)
 	case "ls-tree":
 		commands.LsTree(os.Args)
-
+	case "checkout":
+		commands.Checkout(os.Args)
 	}
 }

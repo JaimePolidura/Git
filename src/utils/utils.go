@@ -99,3 +99,11 @@ func ExitError(message string) {
 	fmt.Fprintf(os.Stderr, message+"\n")
 	os.Exit(1)
 }
+
+func CheckFileOrDirExists(path string) bool {
+	if _, err := os.Stat(path); err == nil {
+		return true
+	} else {
+		return false
+	}
+}
