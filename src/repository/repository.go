@@ -8,6 +8,7 @@ import (
 	"errors"
 	"git/src/objects"
 	"git/src/utils"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -110,6 +111,32 @@ func (r *Repository) ReadObject(hash string) (objects.GitObject, error) {
 	defer objectFileZlibReader.Close()
 
 	return objects.DeserializeObject(objectFileZlibReader)
+}
+
+func (r *Repository) ResolveRef(namePath string) (string, error) {
+	return r.resolveRefRecursive(namePath)
+}
+
+func (r *Repository) resolveRefRecursive(namePath string) (string, error) {
+	file, err := os.Open(r.GitDir + namePath)
+	if err != nil {
+		return "", err
+	}
+	defer file.Close()
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return "", err
+	}
+
+	stringRef := string(bytes)
+	isRef := strings.HasPrefix(stringRef, "ref: ")
+	if isRef {
+		nextRefPath := strings.Split(stringRef, " ")[1]
+		return r.resolveRefRecursive(nextRefPath)
+	} else {
+		return stringRef, nil
+	}
 }
 
 func FindCurrentRepository(currentPath string) (*Repository, string, error) {
