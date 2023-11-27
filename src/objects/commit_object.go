@@ -11,6 +11,7 @@ type CommitObject struct {
 	Parent    string
 	Author    string
 	Committer string
+	Message   string
 
 	keyValue *utils.NavigationMap[string, string]
 }
@@ -32,8 +33,8 @@ func (c CommitObject) HasParent() bool {
 }
 
 func deserializeCommitObject(commonObject *Object, toDeserialize []byte) (CommitObject, error) {
-	deserializedKeyValue, data := keyValueListDeserialize(toDeserialize)
-	if allContained := deserializedKeyValue.Contains("tree", "parent", "author", "committer", "remaining"); !allContained {
+	deserializedKeyValue, remainingData := keyValueListDeserialize(toDeserialize)
+	if allContained := deserializedKeyValue.Contains("tree", "parent", "author", "committer"); !allContained {
 		return CommitObject{}, errors.New("Invalid key value format. Missing fields")
 	}
 
@@ -43,17 +44,16 @@ func deserializeCommitObject(commonObject *Object, toDeserialize []byte) (Commit
 		Parent:    deserializedKeyValue.Get("parent"),
 		Author:    deserializedKeyValue.Get("author"),
 		Committer: deserializedKeyValue.Get("committer"),
+		Message:   string(remainingData),
 		keyValue:  deserializedKeyValue,
 	}
 
-	commitObject.Object.Data = data
+	commitObject.Object.Data = remainingData
+	commitObject.Object.Length = len(remainingData)
 
 	return commitObject, nil
 }
 
-func (c CommitObject) Serialize() []byte {
-	header := c.serializeHeader()
-	keyValueSerialized := keyValueListSerialize(c.keyValue)
-
-	return append(append(header, keyValueSerialized...), c.Object.Data...)
+func (c CommitObject) serializeSpecificData() []byte {
+	return append(keyValueListSerialize(c.keyValue), c.Object.Data...)
 }

@@ -22,10 +22,8 @@ type GitObject interface {
 	Type() ObjectType
 	Length() int
 	Data() []byte
-}
 
-type SerializableObject interface {
-	Serialize() []byte
+	serializeSpecificData() []byte
 }
 
 type Object struct {
@@ -34,8 +32,15 @@ type Object struct {
 	Data   []byte
 }
 
-func (o *Object) serializeHeader() []byte {
-	return []byte(string(o.Type) + " " + strconv.Itoa(o.Length) + string('\x00'))
+func serializeHeader(gitObject GitObject) []byte {
+	return []byte(string(gitObject.Type()) + " " + strconv.Itoa(gitObject.Length()) + string('\x00'))
+}
+
+func SerializeObject(object GitObject) []byte {
+	header := serializeHeader(object)
+	serialized := object.serializeSpecificData()
+
+	return append(header, serialized...)
 }
 
 func DeserializeObjectWithType[T GitObject](reader io.Reader) (T, error) {

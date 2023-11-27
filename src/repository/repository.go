@@ -20,8 +20,8 @@ type Repository struct {
 	Config   *ini.File
 }
 
-func (r *Repository) WriteObject(object objects.SerializableObject) (string, error) {
-	serializeData := object.Serialize()
+func (r *Repository) WriteObject(object objects.GitObject) (string, error) {
+	serializeData := objects.SerializeObject(object)
 	sha1Hasher := sha1.New()
 	sha1Hasher.Write(serializeData)
 	shaHex := hex.EncodeToString(sha1Hasher.Sum(nil))

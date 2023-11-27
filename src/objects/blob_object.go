@@ -28,6 +28,6 @@ func (b BlobObject) Data() []byte {
 	return b.Object.Data
 }
 
-func (b BlobObject) Serialize() []byte {
-	return append(b.serializeHeader(), b.Object.Data...)
+func (b BlobObject) serializeSpecificData() []byte {
+	return b.Object.Data
 }

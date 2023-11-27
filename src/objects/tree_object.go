@@ -20,7 +20,7 @@ type TreeEntry struct {
 	Path string
 }
 
-func (t TreeObject) Serialize() []byte {
+func (t TreeObject) serializeSpecificData() []byte {
 	t.shortEntries()
 	var bufferResult bytes.Buffer
 
@@ -61,8 +61,8 @@ func deserializeTreeObject(commonObject *Object, toDeserialize []byte) (TreeObje
 	actualOffset := 0
 
 	for len(toDeserialize) > actualOffset {
-		if treeEntry, newOffset, err := deserializeTreeObjectEntry(toDeserialize, actualOffset); err == nil {
-			entries = append(entries, treeEntry)
+		if treeEntryDeserialized, newOffset, err := deserializeTreeObjectEntry(toDeserialize, actualOffset); err == nil {
+			entries = append(entries, treeEntryDeserialized)
 			actualOffset = newOffset
 		} else {
 			return TreeObject{}, err
@@ -79,7 +79,7 @@ func deserializeTreeObject(commonObject *Object, toDeserialize []byte) (TreeObje
 
 func deserializeTreeObjectEntry(bytes []byte, offset int) (TreeEntry, int, error) {
 	modeBytes := bytes[offset : offset+6]
-	pathBytes, offset, err := utils.ReadUntil(bytes, offset+6, 0)
+	pathBytes, offset, err := utils.ReadUntil(bytes, offset+7, 0)
 	if err != nil {
 		return TreeEntry{}, -1, err
 	}
