@@ -25,5 +25,7 @@ func main() {
 		commands.LsTree(os.Args)
 	case "checkout":
 		commands.Checkout(os.Args)
+	case "tag":
+		commands.Tag(os.Args)
 	}
 }

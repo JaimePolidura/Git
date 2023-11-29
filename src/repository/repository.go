@@ -88,20 +88,21 @@ func (r *Repository) ReadCommitObject(hash string) (objects.CommitObject, error)
 	return gitObject.(objects.CommitObject), nil
 }
 
-func (r *Repository) ReadObject(hash string) (objects.GitObject, error) {
-	prefix, remainder := hash[:2], hash[2:]
+func (r *Repository) ReadObject(unformattedHash string) (objects.GitObject, error) {
+	formattedHash := r.FormatObjectHash(unformattedHash)
+	prefix, remainder := formattedHash[:2], formattedHash[2:]
 	objectPath := utils.Paths(r.GitDir, "objects", prefix, remainder)
 	objectFile, err := os.Open(objectPath)
 	defer objectFile.Close()
 	if err != nil {
-		return nil, errors.New("Cannot open object file: " + hash)
+		return nil, errors.New("Cannot open object file: " + formattedHash)
 	}
 	objectFileState, err := objectFile.Stat()
 	if err != nil {
-		return nil, errors.New("Cannot get stat from object file: " + hash)
+		return nil, errors.New("Cannot get stat from object file: " + formattedHash)
 	}
 	if objectFileState.IsDir() {
-		return nil, errors.New("Object file: " + hash + " cannot be a dir")
+		return nil, errors.New("Object file: " + formattedHash + " cannot be a dir")
 	}
 
 	objectFileZlibReader, err := zlib.NewReader(objectFile)
@@ -113,20 +114,29 @@ func (r *Repository) ReadObject(hash string) (objects.GitObject, error) {
 	return objects.DeserializeObject(objectFileZlibReader)
 }
 
-func (r *Repository) ResolveRef(namePath string) (string, error) {
+func (r *Repository) FormatObjectHash(hash string) string {
+	return hash
+}
+
+func (r *Repository) WriteRef(reference objects.Reference) {
+	utils.CreateFileIfNotExistsWithContent(utils.Paths(r.GitDir, "refs"), reference.NamePath, reference.Value+"\n")
+}
+
+func (r *Repository) ResolveRef(namePath string) (objects.Reference, error) {
 	return r.resolveRefRecursive(namePath)
 }
 
-func (r *Repository) resolveRefRecursive(namePath string) (string, error) {
+func (r *Repository) resolveRefRecursive(namePath string) (objects.Reference, error) {
 	file, err := os.Open(r.GitDir + namePath)
+	//This is normal in one specific case: we're looking for HEAD on a new repository with no commits
 	if err != nil {
-		return "", err
+		return objects.Reference{}, nil
 	}
 	defer file.Close()
 
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
-		return "", err
+		return objects.Reference{}, err
 	}
 
 	stringRef := string(bytes)
@@ -135,8 +145,38 @@ func (r *Repository) resolveRefRecursive(namePath string) (string, error) {
 		nextRefPath := strings.Split(stringRef, " ")[1]
 		return r.resolveRefRecursive(nextRefPath)
 	} else {
-		return stringRef, nil
+		return objects.Reference{NamePath: namePath, Value: stringRef}, nil
 	}
+}
+
+func (r *Repository) GetAllRefs() (map[string]objects.Reference, error) {
+	refsPath := utils.Paths(r.GitDir, "/refs")
+	result := make(map[string]objects.Reference)
+
+	err := r.readRefsRecursive(result, refsPath)
+
+	return result, err
+}
+
+func (r *Repository) readRefsRecursive(result map[string]objects.Reference, dirPath string) error {
+	files, err := os.ReadDir(dirPath)
+	if err != nil {
+		return nil
+	}
+
+	for _, file := range files {
+		filePath := utils.Paths(dirPath, file.Name())
+
+		if !file.IsDir() {
+			if resolvedRef, err := r.ResolveRef(filePath); err != nil {
+				result[filePath] = resolvedRef
+			}
+		} else {
+			r.readRefsRecursive(result, filePath)
+		}
+	}
+
+	return nil
 }
 
 func FindCurrentRepository(currentPath string) (*Repository, string, error) {

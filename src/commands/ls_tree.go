@@ -21,7 +21,7 @@ func LsTree(args []string) {
 	}
 
 	gitObject := getTreeGitObject(currentRepository, sha)
-
+	
 	printEntriesRecursive(currentRepository, gitObject.Entries)
 }
 

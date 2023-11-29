@@ -63,6 +63,8 @@ func DeserializeObject(reader io.Reader) (GitObject, error) {
 		gitObject, err = deserializeCommitObject(commonObject, pendingToDeserialize)
 	case TREE:
 		gitObject, err = deserializeTreeObject(commonObject, pendingToDeserialize)
+	case TAG:
+		gitObject, err = deserializeTagObject(commonObject, pendingToDeserialize)
 	}
 
 	return gitObject, err
@@ -107,7 +109,7 @@ func getObjectTypeByString(objectTypeString string) (ObjectType, error) {
 		return BLOB, nil
 	case "tree":
 		return TREE, nil
-	case "TAG":
+	case "tag":
 		return TAG, nil
 	default:
 		return "", errors.New("ObjectType " + objectTypeString + " not found")
