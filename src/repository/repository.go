@@ -62,7 +62,7 @@ func (r *Repository) WriteObject(object objects.GitObject) (string, error) {
 }
 
 func (r *Repository) ReadTreeObject(hash string) (objects.TreeObject, error) {
-	gitObject, err := r.ReadObject(hash)
+	gitObject, err := r.ReadObject(hash, objects.TREE)
 	if err != nil || gitObject.Type() != objects.BLOB {
 		return objects.TreeObject{}, err
 	}
@@ -71,7 +71,7 @@ func (r *Repository) ReadTreeObject(hash string) (objects.TreeObject, error) {
 }
 
 func (r *Repository) ReadBlobObject(hash string) (objects.BlobObject, error) {
-	gitObject, err := r.ReadObject(hash)
+	gitObject, err := r.ReadObject(hash, objects.BLOB)
 	if err != nil || gitObject.Type() != objects.BLOB {
 		return objects.BlobObject{}, err
 	}
@@ -80,7 +80,7 @@ func (r *Repository) ReadBlobObject(hash string) (objects.BlobObject, error) {
 }
 
 func (r *Repository) ReadCommitObject(hash string) (objects.CommitObject, error) {
-	gitObject, err := r.ReadObject(hash)
+	gitObject, err := r.ReadObject(hash, objects.COMMIT)
 	if err != nil || gitObject.Type() != objects.COMMIT {
 		return objects.CommitObject{}, err
 	}
@@ -88,21 +88,28 @@ func (r *Repository) ReadCommitObject(hash string) (objects.CommitObject, error)
 	return gitObject.(objects.CommitObject), nil
 }
 
-func (r *Repository) ReadObject(unformattedHash string) (objects.GitObject, error) {
-	formattedHash := r.FormatObjectHash(unformattedHash)
-	prefix, remainder := formattedHash[:2], formattedHash[2:]
+func (r *Repository) ReadObject(unresolvedHash string, reqType objects.ObjectType) (objects.GitObject, error) {
+	if resolvedHash, err := r.ResolveObjectHash(unresolvedHash, reqType); err == nil {
+		return r.readObjectByResolvedHash(resolvedHash)
+	} else {
+		return nil, err
+	}
+}
+
+func (r *Repository) readObjectByResolvedHash(resolvedHash string) (objects.GitObject, error) {
+	prefix, remainder := resolvedHash[:2], resolvedHash[2:]
 	objectPath := utils.Paths(r.GitDir, "objects", prefix, remainder)
 	objectFile, err := os.Open(objectPath)
 	defer objectFile.Close()
 	if err != nil {
-		return nil, errors.New("Cannot open object file: " + formattedHash)
+		return nil, errors.New("Cannot open object file: " + resolvedHash)
 	}
 	objectFileState, err := objectFile.Stat()
 	if err != nil {
-		return nil, errors.New("Cannot get stat from object file: " + formattedHash)
+		return nil, errors.New("Cannot get stat from object file: " + resolvedHash)
 	}
 	if objectFileState.IsDir() {
-		return nil, errors.New("Object file: " + formattedHash + " cannot be a dir")
+		return nil, errors.New("Object file: " + resolvedHash + " cannot be a dir")
 	}
 
 	objectFileZlibReader, err := zlib.NewReader(objectFile)
@@ -112,10 +119,6 @@ func (r *Repository) ReadObject(unformattedHash string) (objects.GitObject, erro
 	defer objectFileZlibReader.Close()
 
 	return objects.DeserializeObject(objectFileZlibReader)
-}
-
-func (r *Repository) FormatObjectHash(hash string) string {
-	return hash
 }
 
 func (r *Repository) WriteRef(reference objects.Reference) {
@@ -177,6 +180,74 @@ func (r *Repository) readRefsRecursive(result map[string]objects.Reference, dirP
 	}
 
 	return nil
+}
+
+func (r *Repository) ResolveObjectHash(hash string, reqObjectType objects.ObjectType) (string, error) {
+	candidatesHash, err := r.getCandidatesrResolveObjectHash(hash)
+	if err != nil {
+		return "", err
+	}
+	if len(candidatesHash) > 1 {
+		utils.ExitError("Ambiguous reference ")
+	}
+
+	candidateHash := candidatesHash[0]
+
+	for {
+		candidateObject, err := r.readObjectByResolvedHash(candidateHash)
+
+		if err != nil {
+			return "", err
+		}
+
+		if reqObjectType == objects.NONE {
+			return candidateHash, nil
+		}
+
+		if candidateObject.Type() == objects.TAG {
+			candidateHash = candidateObject.(objects.TagObject).ObjectTag
+		} else if candidateObject.Type() == objects.COMMIT && reqObjectType == objects.TREE {
+			candidateHash = candidateObject.(objects.CommitObject).Tree
+		} else {
+			return "", errors.New("Cannot get type")
+		}
+	}
+}
+
+func (r *Repository) getCandidatesrResolveObjectHash(objectName string) ([]string, error) {
+	if strings.ToUpper(objectName) == "HEAD" {
+		headHash, err := r.ResolveRef(objectName)
+		return []string{headHash.Value}, err
+	}
+
+	candidatesHash := make([]string, 0)
+
+	isGitHash := utils.IsValidGitHash(objectName)
+	if isGitHash {
+		prefix := objectName[:2]
+		remaining := objectName[2:]
+		pathPrefix := utils.Path(r.GitDir, prefix)
+		if utils.CheckFileOrDirExists(pathPrefix) {
+			if dirs, err := os.ReadDir(pathPrefix); err == nil {
+				for _, file := range dirs {
+					if strings.HasPrefix(file.Name(), remaining) {
+						candidatesHash = append(candidatesHash, prefix+file.Name())
+						break
+					}
+				}
+			}
+		}
+	}
+
+	if ref, err := r.ResolveRef("refs/tags/" + objectName); err == nil {
+		candidatesHash = append(candidatesHash, ref.Value)
+	}
+
+	if ref, err := r.ResolveRef("/refs/heads/" + objectName); err == nil {
+		candidatesHash = append(candidatesHash, ref.Value)
+	}
+
+	return candidatesHash, nil
 }
 
 func FindCurrentRepository(currentPath string) (*Repository, string, error) {

@@ -32,13 +32,13 @@ func Tag(args []string) {
 }
 
 func createTag(repository *repository.Repository, name string, refValue string, createTagObject bool) {
-	formattedHashRefValue := repository.FormatObjectHash(refValue)
+	resolvedHashRefValue := repository.ResolveObjectHash(refValue)
 	tagNamePath := utils.Path("tags", name)
 
 	if createTagObject {
 		tagObject := objects.TagObject{
 			Object:    objects.Object{Type: objects.TAG},
-			ObjectTag: formattedHashRefValue,
+			ObjectTag: resolvedHashRefValue,
 			Tag:       tagNamePath,
 			Tagger:    "Jaime Polidura <jaime.polidura@gmail.com>",
 		}
@@ -49,7 +49,7 @@ func createTag(repository *repository.Repository, name string, refValue string, 
 			utils.ExitError("Cannot create tag: " + err.Error())
 		}
 	} else {
-		repository.WriteRef(objects.Reference{NamePath: tagNamePath, Value: formattedHashRefValue})
+		repository.WriteRef(objects.Reference{NamePath: tagNamePath, Value: resolvedHashRefValue})
 	}
 }
 

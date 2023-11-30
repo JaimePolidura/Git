@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 )
 
 func JoinStrings(strings []string) string {
@@ -98,6 +99,11 @@ func Check(err error, message string) {
 func ExitError(message string) {
 	fmt.Fprintf(os.Stderr, message+"\n")
 	os.Exit(1)
+}
+
+func IsValidGitHash(hash string) bool {
+	match, err := regexp.MatchString("^[0-9A-Fa-f]{4,40}$", hash)
+	return err != nil && match
 }
 
 func CheckFileOrDirExists(path string) bool {
