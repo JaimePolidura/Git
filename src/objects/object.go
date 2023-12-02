@@ -16,7 +16,7 @@ const (
 	BLOB   ObjectType = "blob"
 	TREE   ObjectType = "tree"
 	TAG    ObjectType = "tag"
-	NONE   ObjectType = "none"
+	NONE   ObjectType = "none" //Used only for
 )
 
 type GitObject interface {

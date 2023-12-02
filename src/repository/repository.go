@@ -89,14 +89,14 @@ func (r *Repository) ReadCommitObject(hash string) (objects.CommitObject, error)
 }
 
 func (r *Repository) ReadObject(unresolvedHash string, reqType objects.ObjectType) (objects.GitObject, error) {
-	if resolvedHash, err := r.ResolveObjectHash(unresolvedHash, reqType); err == nil {
-		return r.readObjectByResolvedHash(resolvedHash)
+	if resolvedHash, err := r.ResolveObjectName(unresolvedHash, reqType); err == nil {
+		return r.readObjectByResolvedName(resolvedHash)
 	} else {
 		return nil, err
 	}
 }
 
-func (r *Repository) readObjectByResolvedHash(resolvedHash string) (objects.GitObject, error) {
+func (r *Repository) readObjectByResolvedName(resolvedHash string) (objects.GitObject, error) {
 	prefix, remainder := resolvedHash[:2], resolvedHash[2:]
 	objectPath := utils.Paths(r.GitDir, "objects", prefix, remainder)
 	objectFile, err := os.Open(objectPath)
@@ -182,8 +182,8 @@ func (r *Repository) readRefsRecursive(result map[string]objects.Reference, dirP
 	return nil
 }
 
-func (r *Repository) ResolveObjectHash(hash string, reqObjectType objects.ObjectType) (string, error) {
-	candidatesHash, err := r.getCandidatesrResolveObjectHash(hash)
+func (r *Repository) ResolveObjectName(name string, reqObjectType objects.ObjectType) (string, error) {
+	candidatesHash, err := r.getCandidatesResolveObjectName(name)
 	if err != nil {
 		return "", err
 	}
@@ -194,7 +194,7 @@ func (r *Repository) ResolveObjectHash(hash string, reqObjectType objects.Object
 	candidateHash := candidatesHash[0]
 
 	for {
-		candidateObject, err := r.readObjectByResolvedHash(candidateHash)
+		candidateObject, err := r.readObjectByResolvedName(candidateHash)
 
 		if err != nil {
 			return "", err
@@ -209,12 +209,12 @@ func (r *Repository) ResolveObjectHash(hash string, reqObjectType objects.Object
 		} else if candidateObject.Type() == objects.COMMIT && reqObjectType == objects.TREE {
 			candidateHash = candidateObject.(objects.CommitObject).Tree
 		} else {
-			return "", errors.New("Cannot get type")
+			return "", errors.New("cannot get type")
 		}
 	}
 }
 
-func (r *Repository) getCandidatesrResolveObjectHash(objectName string) ([]string, error) {
+func (r *Repository) getCandidatesResolveObjectName(objectName string) ([]string, error) {
 	if strings.ToUpper(objectName) == "HEAD" {
 		headHash, err := r.ResolveRef(objectName)
 		return []string{headHash.Value}, err

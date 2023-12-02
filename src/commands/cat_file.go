@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"git/src/objects"
 	"git/src/repository"
 	"git/src/utils"
 	"os"
@@ -20,7 +21,7 @@ func CatFile(args []string) {
 		utils.ExitError(err.Error())
 	}
 
-	object, err := currentRepository.ReadObject(sha)
+	object, err := currentRepository.ReadObject(sha, objects.NONE)
 	if err != nil {
 		utils.ExitError("Cannot read object: " + err.Error())
 	}

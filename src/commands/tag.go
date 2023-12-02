@@ -32,7 +32,7 @@ func Tag(args []string) {
 }
 
 func createTag(repository *repository.Repository, name string, refValue string, createTagObject bool) {
-	resolvedHashRefValue := repository.ResolveObjectHash(refValue)
+	resolvedHashRefValue := repository.ResolveObjectName(refValue)
 	tagNamePath := utils.Path("tags", name)
 
 	if createTagObject {
