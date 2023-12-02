@@ -3,6 +3,7 @@ package utils
 import (
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -112,4 +113,19 @@ func CheckFileOrDirExists(path string) bool {
 	} else {
 		return false
 	}
+}
+
+func GetAllSubfiles(path string) map[string]string {
+	dirFs := os.DirFS(path)
+	results := make(map[string]string)
+	filePaths := make([]string, 0)
+	fs.WalkDir(dirFs, ".", func(path string, d fs.DirEntry, err error) error {
+		if !d.IsDir() {
+			results[path] = path
+		}
+
+		return nil
+	})
+
+	return results
 }

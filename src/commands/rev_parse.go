@@ -19,7 +19,7 @@ func RevParse(args []string) {
 	}
 
 	objectName := args[2]
-	hash, err := repository.ResolveObjectName(objectName, objects.NONE)
+	hash, err := repository.ResolveObjectName(objectName, objects.ANY)
 
 	if err != nil {
 		utils.ExitError(hash)

@@ -21,7 +21,7 @@ func CatFile(args []string) {
 		utils.ExitError(err.Error())
 	}
 
-	object, err := currentRepository.ReadObject(sha, objects.NONE)
+	object, err := currentRepository.ReadObject(sha, objects.ANY)
 	if err != nil {
 		utils.ExitError("Cannot read object: " + err.Error())
 	}

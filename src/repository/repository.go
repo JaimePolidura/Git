@@ -265,7 +265,7 @@ func (r *Repository) ResolveObjectName(name string, reqObjectType objects.Object
 			return "", err
 		}
 
-		if reqObjectType == objects.NONE {
+		if reqObjectType == objects.ANY {
 			return candidateHash, nil
 		}
 
@@ -313,6 +313,26 @@ func (r *Repository) getCandidatesResolveObjectName(objectName string) ([]string
 	}
 
 	return candidatesHash, nil
+}
+
+func (r *Repository) GetActiveBranch() (_name string, _detached bool, _err error) {
+	file, err := os.Open(utils.Path(r.GitDir, "HEAD"))
+	if err != nil {
+		return "", false, err
+	}
+
+	bytes, err := ioutil.ReadAll(file)
+	if err != nil {
+		return "", false, err
+	}
+
+	headContentString := string(bytes)
+
+	if strings.HasPrefix(headContentString, "ref: refs/heads/HEAD") {
+		return string(bytes[16:]), false, nil
+	} else {
+		return headContentString, true, nil
+	}
 }
 
 func FindCurrentRepository(currentPath string) (*Repository, string, error) {
