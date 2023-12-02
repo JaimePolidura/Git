@@ -27,5 +27,7 @@ func main() {
 		commands.Checkout(os.Args)
 	case "tag":
 		commands.Tag(os.Args)
+	case "ls-files":
+		commands.LsFiles(os.Args)
 	}
 }

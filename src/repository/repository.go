@@ -6,6 +6,8 @@ import (
 	"crypto/sha1"
 	"encoding/hex"
 	"errors"
+	"git/src/ignore"
+	"git/src/index"
 	"git/src/objects"
 	"git/src/utils"
 	"io/ioutil"
@@ -121,8 +123,71 @@ func (r *Repository) readObjectByResolvedName(resolvedHash string) (objects.GitO
 	return objects.DeserializeObject(objectFileZlibReader)
 }
 
+func (r *Repository) ReadIndex() (index.IndexObject, error) {
+	if file, err := os.Open(utils.Path(r.GitDir, "index")); err == nil {
+		return index.Deserialize(file)
+	} else {
+		return index.IndexObject{}, err
+	}
+}
+
 func (r *Repository) WriteRef(reference objects.Reference) {
 	utils.CreateFileIfNotExistsWithContent(utils.Paths(r.GitDir, "refs"), reference.NamePath, reference.Value+"\n")
+}
+
+func (r *Repository) IsIgnored(pathToCheckIfIgnored string) (bool, error) {
+	gitIgnores, err := r.readGitIgnores(pathToCheckIfIgnored)
+	if err != nil {
+		return false, err
+	}
+
+	parent := filepath.Dir(pathToCheckIfIgnored)
+
+	for {
+		if gitIgnore, gitIgnoreExists := gitIgnores[parent]; gitIgnoreExists {
+			matchesSomeIgnore, err := gitIgnore.IsIgnored(pathToCheckIfIgnored)
+
+			if err != nil {
+				return false, err
+			}
+			if matchesSomeIgnore {
+				return true, nil
+			}
+		}
+		if parent == "" {
+			break
+		}
+
+		parent = filepath.Dir(parent)
+	}
+
+	return false, nil
+}
+
+func (r *Repository) readGitIgnores(relativeRepositoryPath string) (map[string]ignore.GitIgnore, error) {
+	index, err := r.ReadIndex()
+	if err != nil {
+		return nil, err
+	}
+
+	gitIgnores := make(map[string]ignore.GitIgnore)
+
+	for _, entry := range index.Entries {
+		if entry.FullPathName == ".gitignore" || strings.HasSuffix(entry.FullPathName, "/.gitignore") {
+			file, err := os.Open(entry.FullPathName)
+			if err != nil {
+				return nil, err
+			}
+			gitIgnore, err := ignore.Deserialize(file)
+			if err != nil {
+				return nil, err
+			}
+
+			gitIgnores[filepath.Dir(entry.FullPathName)] = gitIgnore
+		}
+	}
+
+	return gitIgnores, nil
 }
 
 func (r *Repository) ResolveRef(namePath string) (objects.Reference, error) {

@@ -1,4 +1,4 @@
-package objects
+package index
 
 import (
 	"encoding/binary"
@@ -29,8 +29,12 @@ type IndexEntry struct {
 	FullPathName    string
 }
 
-func (i *IndexObject) deserialize(reader io.Reader) IndexObject {
-	allBytes, _ := ioutil.ReadAll(reader)
+func Deserialize(reader io.Reader) (IndexObject, error) {
+	allBytes, err := ioutil.ReadAll(reader)
+
+	if err != nil {
+		return IndexObject{}, nil
+	}
 
 	version := binary.BigEndian.Uint32(allBytes[4:8])
 	count := binary.BigEndian.Uint32(allBytes[8:12])
@@ -45,7 +49,7 @@ func (i *IndexObject) deserialize(reader io.Reader) IndexObject {
 		entries = append(entries, entry)
 	}
 
-	return IndexObject{Version: version, Entries: entries}
+	return IndexObject{Version: version, Entries: entries}, nil
 }
 
 func deserializeIndexEntry(content []byte, offset int) (IndexEntry, int) {
@@ -63,13 +67,13 @@ func deserializeIndexEntry(content []byte, offset int) (IndexEntry, int) {
 	sha := strconv.FormatUint(uint64(binary.BigEndian.Uint32(content[offset+40:offset+60])), 16)
 
 	flags := binary.BigEndian.Uint32(content[offset+60 : offset+62])
-	flag_assume_valid := (flags & 0x8000) != 0
-	flag_state := (flags & 0x3000) != 0
-	name_length := flags & 0xFFF
+	flagAssumeValid := (flags & 0x8000) != 0
+	flagState := (flags & 0x3000) != 0
+	nameLength := flags & 0xFFF
 	offset += 62
 
-	name := string(content[offset : offset+int(name_length)])
-	offset += int(name_length) + 1
+	name := string(content[offset : offset+int(nameLength)])
+	offset += int(nameLength) + 1
 
 	offset = 8 * int(math.Ceil(float64(offset)/8))
 
@@ -84,8 +88,8 @@ func deserializeIndexEntry(content []byte, offset int) (IndexEntry, int) {
 		Gid:             gid,
 		Fsize:           fsize,
 		Sha:             sha,
-		FlagAssumeValid: flag_assume_valid,
-		FlagState:       flag_state,
+		FlagAssumeValid: flagAssumeValid,
+		FlagState:       flagState,
 		FullPathName:    name,
 	}, offset
 }

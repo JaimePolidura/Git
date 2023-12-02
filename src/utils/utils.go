@@ -64,7 +64,7 @@ func ReadUntil(bytes []byte, offset int, char uint8) ([]byte, int, error) {
 		offset = offset + 1
 
 		if offset >= len(bytes) && !untilEof {
-			return result, offset, errors.New("Unexpected EOF")
+			return result, offset, nil
 		}
 		if offset >= len(bytes) && untilEof {
 			return result, offset + 1, nil
