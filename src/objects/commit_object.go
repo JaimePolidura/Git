@@ -16,6 +16,25 @@ type CommitObject struct {
 	keyValue *utils.NavigationMap[string, string]
 }
 
+func CreateCommitObject(treeSha string, parent string, author string, message string) CommitObject {
+	commitObject := CommitObject{
+		Object:    Object{Type: COMMIT},
+		Tree:      treeSha,
+		Parent:    parent,
+		Author:    author,
+		Committer: author,
+		Message:   message,
+		keyValue:  &utils.NavigationMap[string, string]{},
+	}
+	commitObject.keyValue.Put("tree", treeSha)
+	commitObject.keyValue.Put("parent", parent)
+	commitObject.keyValue.Put("author", author)
+	commitObject.keyValue.Put("commiter", author)
+	commitObject.keyValue.Put("message", message)
+
+	return commitObject
+}
+
 func (c CommitObject) Type() ObjectType {
 	return c.Object.Type
 }

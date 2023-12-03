@@ -57,7 +57,7 @@ func (self *IndexObject) Serialize() []byte {
 
 	offset := 0
 	for _, entry := range self.Entries {
-		serializedEntryBytes := entry.Deserialize()
+		serializedEntryBytes := entry.Serialize()
 		bytes = append(bytes, serializedEntryBytes...)
 		offset += len(serializedEntryBytes)
 
@@ -73,7 +73,7 @@ func (self *IndexObject) Serialize() []byte {
 	return bytes
 }
 
-func (self *IndexEntry) Deserialize() []byte {
+func (self *IndexEntry) Serialize() []byte {
 	bytes := make([]byte, 0)
 
 	binary.BigEndian.AppendUint64(bytes, self.Ctime)
