@@ -29,5 +29,9 @@ func main() {
 		commands.Tag(os.Args)
 	case "ls-files":
 		commands.LsFiles(os.Args)
+	case "add":
+		commands.Add(os.Args)
+	default:
+		panic("Unknown command")
 	}
 }

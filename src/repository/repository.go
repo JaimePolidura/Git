@@ -123,21 +123,36 @@ func (r *Repository) readObjectByResolvedName(resolvedHash string) (objects.GitO
 	return objects.DeserializeObject(objectFileZlibReader)
 }
 
-func (r *Repository) ReadIndex() (index.IndexObject, error) {
+func (r *Repository) ReadIndex() (*index.IndexObject, error) {
 	if file, err := os.Open(utils.Path(r.GitDir, "index")); err == nil {
 		return index.Deserialize(file)
 	} else {
-		return index.IndexObject{}, err
+		return nil, err
 	}
 }
 
-func (r *Repository) WriteIndex(index index.IndexObject) error {
-	if file, err := os.Open(utils.Path(r.GitDir, "index")); err == nil {
+func (r *Repository) WriteIndex(index *index.IndexObject) error {
+	if err := os.Remove(utils.Paths(r.GitDir, "index")); err != nil {
+		return err
+	}
+
+	if file, err := os.Create(utils.Paths(r.GitDir, "index")); err == nil {
 		_, err := file.Write(index.Serialize())
+		file.Close()
 		return err
 	} else {
 		return err
 	}
+}
+
+func (r *Repository) GetRelativePathRepository(path string) string {
+	isAbsolute := strings.HasPrefix(path, "/")
+	absultePath := path
+	if !isAbsolute {
+		absultePath = utils.Path(utils.CurrentPath(), path)
+	}
+
+	return strings.Trim(strings.Split(absultePath, r.WorkTree+"/")[0], " ")
 }
 
 func (r *Repository) WriteRef(reference objects.Reference) {

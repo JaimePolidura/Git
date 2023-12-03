@@ -6,12 +6,13 @@ import (
 	"io"
 	"io/ioutil"
 	"math"
+	"os"
 	"strconv"
 )
 
 type IndexObject struct {
 	Version uint32
-	Entries []IndexEntry
+	Entries map[string]IndexEntry
 }
 
 type IndexEntry struct {
@@ -30,6 +31,24 @@ type IndexEntry struct {
 	FullPathName    string
 }
 
+func CreateIndexEntry(stats os.FileInfo, pathRelativeRepo string, sha string) IndexEntry {
+	return IndexEntry{
+		Ctime:           uint64(stats.ModTime().UnixNano()),
+		Mtime:           uint64(stats.ModTime().UnixNano()),
+		Dev:             0,
+		Ino:             0,
+		ModeType:        0x08,
+		ModePerms:       0x01A,
+		Uid:             1,
+		Gid:             1,
+		Fsize:           uint32(stats.Size()),
+		Sha:             sha,
+		FlagAssumeValid: false,
+		FlagState:       false,
+		FullPathName:    pathRelativeRepo,
+	}
+}
+
 func (self *IndexObject) Serialize() []byte {
 	bytes := make([]byte, 4)
 
@@ -37,9 +56,7 @@ func (self *IndexObject) Serialize() []byte {
 	binary.BigEndian.AppendUint32(bytes, uint32(len(self.Entries)))
 
 	offset := 0
-	for i := 0; i < len(self.Entries); i++ {
-		entry := self.Entries[i]
-
+	for _, entry := range self.Entries {
 		serializedEntryBytes := entry.Deserialize()
 		bytes = append(bytes, serializedEntryBytes...)
 		offset += len(serializedEntryBytes)
@@ -85,27 +102,27 @@ func (self *IndexEntry) Deserialize() []byte {
 	return bytes
 }
 
-func Deserialize(reader io.Reader) (IndexObject, error) {
+func Deserialize(reader io.Reader) (*IndexObject, error) {
 	allBytes, err := ioutil.ReadAll(reader)
 
 	if err != nil {
-		return IndexObject{}, nil
+		return nil, nil
 	}
 
 	version := binary.BigEndian.Uint32(allBytes[4:8])
 	count := binary.BigEndian.Uint32(allBytes[8:12])
 
-	entries := make([]IndexEntry, count)
+	entries := make(map[string]IndexEntry)
 	content := allBytes[12:]
 	offset := 0
 
 	for i := 0; i < int(count); i++ {
 		entry, newOffset := deserializeIndexEntry(content, offset)
 		offset = newOffset
-		entries = append(entries, entry)
+		entries[entry.FullPathName] = entry
 	}
 
-	return IndexObject{Version: version, Entries: entries}, nil
+	return &IndexObject{Version: version, Entries: entries}, nil
 }
 
 func deserializeIndexEntry(content []byte, offset int) (IndexEntry, int) {
