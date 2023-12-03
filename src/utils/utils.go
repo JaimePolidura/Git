@@ -118,7 +118,6 @@ func CheckFileOrDirExists(path string) bool {
 func GetAllSubfiles(path string) map[string]string {
 	dirFs := os.DirFS(path)
 	results := make(map[string]string)
-	filePaths := make([]string, 0)
 	fs.WalkDir(dirFs, ".", func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
 			results[path] = path
@@ -128,4 +127,12 @@ func GetAllSubfiles(path string) map[string]string {
 	})
 
 	return results
+}
+
+func BoolToUint16(value bool) uint16 {
+	if value {
+		return 0x1
+	} else {
+		return 0x0
+	}
 }

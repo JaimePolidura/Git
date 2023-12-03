@@ -131,6 +131,15 @@ func (r *Repository) ReadIndex() (index.IndexObject, error) {
 	}
 }
 
+func (r *Repository) WriteIndex(index index.IndexObject) error {
+	if file, err := os.Open(utils.Path(r.GitDir, "index")); err == nil {
+		_, err := file.Write(index.Serialize())
+		return err
+	} else {
+		return err
+	}
+}
+
 func (r *Repository) WriteRef(reference objects.Reference) {
 	utils.CreateFileIfNotExistsWithContent(utils.Paths(r.GitDir, "refs"), reference.NamePath, reference.Value+"\n")
 }

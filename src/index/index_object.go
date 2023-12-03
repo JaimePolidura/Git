@@ -2,6 +2,7 @@ package index
 
 import (
 	"encoding/binary"
+	"git/src/utils"
 	"io"
 	"io/ioutil"
 	"math"
@@ -27,6 +28,61 @@ type IndexEntry struct {
 	FlagAssumeValid bool
 	FlagState       bool
 	FullPathName    string
+}
+
+func (self *IndexObject) Serialize() []byte {
+	bytes := make([]byte, 4)
+
+	binary.BigEndian.AppendUint32(bytes, self.Version)
+	binary.BigEndian.AppendUint32(bytes, uint32(len(self.Entries)))
+
+	offset := 0
+	for i := 0; i < len(self.Entries); i++ {
+		entry := self.Entries[i]
+
+		serializedEntryBytes := entry.Deserialize()
+		bytes = append(bytes, serializedEntryBytes...)
+		offset += len(serializedEntryBytes)
+
+		if offset%8 != 0 {
+			pad := 8 - (offset % 8)
+			for i := 0; i < pad; i++ {
+				bytes = append(bytes, 0x00)
+			}
+			offset += 8
+		}
+	}
+
+	return bytes
+}
+
+func (self *IndexEntry) Deserialize() []byte {
+	bytes := make([]byte, 0)
+
+	binary.BigEndian.AppendUint64(bytes, self.Ctime)
+	binary.BigEndian.AppendUint64(bytes, self.Mtime)
+	binary.BigEndian.AppendUint32(bytes, self.Dev)
+
+	binary.BigEndian.AppendUint32(bytes, self.Dev)
+	binary.BigEndian.AppendUint32(bytes, self.Ino)
+	binary.BigEndian.AppendUint32(bytes, self.ModeType<<12|self.ModePerms)
+	binary.BigEndian.AppendUint32(bytes, self.Uid)
+	binary.BigEndian.AppendUint32(bytes, self.Gid)
+	binary.BigEndian.AppendUint32(bytes, self.Fsize)
+	bytes = append(bytes, []byte(self.Sha)...)
+
+	nameLength := uint16(len(self.FullPathName))
+
+	flagAssumeValid := uint16(0)
+	if self.FlagAssumeValid {
+		flagAssumeValid = 0x1 << 15
+	}
+	binary.BigEndian.AppendUint16(bytes, uint16(flagAssumeValid|utils.BoolToUint16(self.FlagState)|nameLength))
+
+	bytes = append(bytes, []byte(self.FullPathName)...)
+	bytes = append(bytes, 0x00)
+
+	return bytes
 }
 
 func Deserialize(reader io.Reader) (IndexObject, error) {
