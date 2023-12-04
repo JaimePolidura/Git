@@ -30,7 +30,7 @@ func createChildDirNode(dirName string) *IndexObjectTreeNode {
 	}
 }
 
-func createChildFileNode(indexEntry IndexEntry, fileName string) *IndexObjectTreeNode {
+func createChildFileNode(fileName string) *IndexObjectTreeNode {
 	return &IndexObjectTreeNode{
 		Entry:    IndexEntry{},
 		Children: make(map[string]*IndexObjectTreeNode, 0),
@@ -62,9 +62,9 @@ func (self *IndexObject) ToTree() *IndexObjectTreeNode {
 				}
 			}
 
-			lastNode.Children[child] = createChildFileNode(indexEntry, child)
+			lastNode.Children[child] = createChildFileNode(child)
 		} else {
-			root.Children[pathIndexEntry] = createChildFileNode(indexEntry, indexEntry.FullPathName)
+			root.Children[pathIndexEntry] = createChildFileNode(indexEntry.FullPathName)
 		}
 	}
 

@@ -6,7 +6,6 @@ import (
 )
 
 type CommitObject struct {
-	Object
 	Tree      string
 	Parent    string
 	Author    string
@@ -16,9 +15,8 @@ type CommitObject struct {
 	keyValue *utils.NavigationMap[string, string]
 }
 
-func CreateCommitObject(treeSha string, parent string, author string, message string) CommitObject {
+func CreateCommitObject(treeSha string, parent string, author string, message string) *Object {
 	commitObject := CommitObject{
-		Object:    Object{Type: COMMIT},
 		Tree:      treeSha,
 		Parent:    parent,
 		Author:    author,
@@ -32,33 +30,23 @@ func CreateCommitObject(treeSha string, parent string, author string, message st
 	commitObject.keyValue.Put("commiter", author)
 	commitObject.keyValue.Put("message", message)
 
-	return commitObject
-}
-
-func (c CommitObject) Type() ObjectType {
-	return c.Object.Type
-}
-
-func (c CommitObject) Length() int {
-	return c.Object.Length
-}
-
-func (c CommitObject) Data() []byte {
-	return c.Object.Data
+	return &Object{
+		Type:                  COMMIT,
+		SerializableGitObject: commitObject,
+	}
 }
 
 func (c CommitObject) HasParent() bool {
 	return true //TODO
 }
 
-func deserializeCommitObject(commonObject *Object, toDeserialize []byte) (CommitObject, error) {
+func deserializeCommitObject(toDeserialize []byte) (CommitObject, error) {
 	deserializedKeyValue, remainingData := keyValueListDeserialize(toDeserialize)
 	if allContained := deserializedKeyValue.Contains("tree", "parent", "author", "committer"); !allContained {
 		return CommitObject{}, errors.New("Invalid key value format. Missing fields")
 	}
 
 	commitObject := CommitObject{
-		Object:    *commonObject,
 		Tree:      deserializedKeyValue.Get("tree"),
 		Parent:    deserializedKeyValue.Get("parent"),
 		Author:    deserializedKeyValue.Get("author"),
@@ -67,12 +55,9 @@ func deserializeCommitObject(commonObject *Object, toDeserialize []byte) (Commit
 		keyValue:  deserializedKeyValue,
 	}
 
-	commitObject.Object.Data = remainingData
-	commitObject.Object.Length = len(remainingData)
-
 	return commitObject, nil
 }
 
-func (c CommitObject) serializeSpecificData() []byte {
-	return append(keyValueListSerialize(c.keyValue), c.Object.Data...)
+func (c CommitObject) Serialize() []byte {
+	return append(keyValueListSerialize(c.keyValue))
 }

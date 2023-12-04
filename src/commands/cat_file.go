@@ -26,5 +26,5 @@ func CatFile(args []string) {
 		utils.ExitError("Cannot read object: " + err.Error())
 	}
 
-	_, _ = os.Stdout.Write(object.Data())
+	_, _ = os.Stdout.Write(object.Serialize())
 }

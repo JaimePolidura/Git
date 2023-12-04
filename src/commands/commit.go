@@ -11,7 +11,7 @@ import (
 	"strings"
 )
 
-// Args: main.go commit -m <message...>
+// Commit Args: main.go commit -m <message...>
 func Commit(args []string) {
 	if len(args) < 4 {
 		utils.ExitError("Invalid arguments: commit -m <message...>")
@@ -77,9 +77,9 @@ func createTreeObject(children map[string]*index.IndexObjectTreeNode, parent *in
 		})
 	}
 
-	treeObject := objects.TreeObject{
-		Object:  objects.Object{Type: objects.TREE},
-		Entries: treeEntries,
+	treeObject := &objects.Object{
+		Type:                  objects.TREE,
+		SerializableGitObject: objects.TreeObject{Entries: treeEntries},
 	}
 
 	treeSha, err := repository.WriteObject(treeObject)

@@ -9,8 +9,6 @@ import (
 )
 
 type TreeObject struct {
-	Object
-
 	Entries []TreeEntry
 }
 
@@ -20,7 +18,7 @@ type TreeEntry struct {
 	Path string
 }
 
-func (t TreeObject) serializeSpecificData() []byte {
+func (t TreeObject) Serialize() []byte {
 	t.sortEntries()
 	var bufferResult bytes.Buffer
 
@@ -60,7 +58,7 @@ func (t TreeEntry) IsDir() bool {
 	return strings.HasPrefix(t.Path, "10")
 }
 
-func deserializeTreeObject(commonObject *Object, toDeserialize []byte) (TreeObject, error) {
+func deserializeTreeObject(toDeserialize []byte) (TreeObject, error) {
 	entries := make([]TreeEntry, 0)
 	actualOffset := 0
 
@@ -73,12 +71,7 @@ func deserializeTreeObject(commonObject *Object, toDeserialize []byte) (TreeObje
 		}
 	}
 
-	commonObject.Data = toDeserialize
-
-	return TreeObject{
-		Entries: entries,
-		Object:  *commonObject,
-	}, nil
+	return TreeObject{Entries: entries}, nil
 }
 
 func deserializeTreeObjectEntry(bytes []byte, offset int) (TreeEntry, int, error) {
@@ -101,16 +94,4 @@ func deserializeTreeObjectEntry(bytes []byte, offset int) (TreeEntry, int, error
 		Sha:  string(shaBytes),
 		Path: string(pathBytes),
 	}, offset, nil
-}
-
-func (t TreeObject) Type() ObjectType {
-	return t.Object.Type
-}
-
-func (t TreeObject) Length() int {
-	return t.Object.Length
-}
-
-func (t TreeObject) Data() []byte {
-	return t.Object.Data
 }

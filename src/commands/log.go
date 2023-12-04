@@ -37,18 +37,15 @@ func printCommit(commitObject objects.CommitObject, sha string) {
 	fmt.Println("commit " + sha)
 	fmt.Println("Author " + commitObject.Author)
 	fmt.Println("")
-	fmt.Println("\t" + string(commitObject.Data()))
+	fmt.Println("\t" + commitObject.Message)
 	fmt.Println("")
 }
 
 func getGitCommitObject(currentRepository *repository.Repository, sha string) objects.CommitObject {
-	gitObject, err := currentRepository.ReadObject(sha)
+	gitObject, err := currentRepository.ReadObject(sha, objects.COMMIT)
 	if err != nil {
 		utils.ExitError("Object with SHA " + sha + " not found")
 	}
-	if gitObject.Type() != objects.COMMIT {
-		utils.ExitError("Object has invalid type. Only COMMIT types are allowed")
-	}
 
-	return gitObject.(objects.CommitObject)
+	return gitObject.SerializableGitObject.(objects.CommitObject)
 }

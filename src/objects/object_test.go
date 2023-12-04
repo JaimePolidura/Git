@@ -9,7 +9,7 @@ import (
 
 func TestTreeObject_Deserialize(t *testing.T) {
 	bytes := []byte("100777 src" + string('\x00') + "a5fa5f1s1sa5a5f1sf1s100357 README.md" + string('\x00') + "saaa5f1sf15fa5f1s15s")
-	deserialized, err := deserializeTreeObject(&Object{Type: TREE}, bytes)
+	deserialized, err := deserializeTreeObject(bytes)
 
 	assert.Equal(t, err, nil)
 	firstEntry := deserialized.Entries[0]
@@ -25,9 +25,9 @@ func TestTreeObject_Deserialize(t *testing.T) {
 
 func TestTreeObject_Serialize(t *testing.T) {
 	bytes := []byte("100777 src" + string('\x00') + "a5fa5f1s1sa5a5f1sf1s")
-	deserialized, _ := deserializeTreeObject(&Object{Type: TREE}, bytes)
+	deserialized, _ := deserializeTreeObject(bytes)
 
-	assert.Equal(t, deserialized.serializeSpecificData(), bytes)
+	assert.Equal(t, deserialized.Serialize(), bytes)
 }
 
 func TestCommitObject_Deserialize(t *testing.T) {
@@ -36,7 +36,7 @@ func TestCommitObject_Deserialize(t *testing.T) {
 
 	commonObject := &Object{Type: COMMIT}
 
-	object, err := deserializeCommitObject(commonObject, bytes)
+	object, err := deserializeCommitObject(bytes)
 
 	//fmt.Println(err.Error())
 
@@ -52,9 +52,9 @@ func TestCommitObject_Deserialize(t *testing.T) {
 func TestCommitObject_Serialize(t *testing.T) {
 	bytes := []byte("tree 29ff16c9c14e2652b22f8b78bb08a5a07930c147\nparent 206941306e8a8af65b66eaaaea388a7ae24d49a0\n" +
 		"author Thibault Polge <thibault@thb.lt> 1527025023 +0200\ncommitter Thibault Polge <thibault@thb.lt> 1527025044 +0200\n\nCreate first commit")
-	object, _ := deserializeCommitObject(&Object{Type: COMMIT}, bytes)
+	object, _ := deserializeCommitObject(bytes)
 
-	serializedCommit := object.serializeSpecificData()
+	serializedCommit := object.Serialize()
 
 	a := string(serializedCommit)
 	fmt.Println(a)

@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-// Args: main.go checkout <sha>
+// Checkout Args: main.go checkout <sha>
 func Checkout(args []string) {
 	if len(args) != 3 {
 		utils.ExitError("Invalid arguments checkout <sha>")
@@ -37,11 +37,11 @@ func restoreRecursive(currentRepository *repository.Repository, tree objects.Tre
 		if !treeEntry.IsDir() {
 			blobGitObject := getBlobObject(currentRepository, treeEntry.Sha)
 			file, err := os.Open(pathEntry)
-			utils.Check(err, "Cannot open file "+pathEntry)
 			defer file.Close()
+			utils.Check(err, "Cannot open file "+pathEntry)
 
 			utils.Check(os.Truncate(pathEntry, 0), "Cannot clear file content: "+pathEntry)
-			_, err = file.Write(blobGitObject.Data())
+			_, err = file.Write(blobGitObject.Data)
 			utils.Check(err, "Cannot write to file "+pathEntry)
 
 		} else {

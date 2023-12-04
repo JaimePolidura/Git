@@ -37,13 +37,10 @@ func printEntriesRecursive(repository *repository.Repository, entries []objects.
 }
 
 func getTreeGitObject(repository *repository.Repository, sha string) objects.TreeObject {
-	gitObject, err := repository.ReadObject(sha)
+	gitObject, err := repository.ReadObject(sha, objects.TREE)
 	if err != nil {
 		utils.ExitError("Object with SHA " + sha + " not found")
 	}
-	if gitObject.Type() != objects.TREE {
-		utils.ExitError("Object has invalid type. Only TREE types are allowed")
-	}
 
-	return gitObject.(objects.TreeObject)
+	return gitObject.SerializableGitObject.(objects.TreeObject)
 }

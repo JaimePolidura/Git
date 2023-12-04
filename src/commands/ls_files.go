@@ -7,18 +7,18 @@ import (
 	"strconv"
 )
 
-// Args: maing.go ls-files
+// LsFiles Args: maing.go ls-files
 func LsFiles(args []string) {
 	if len(args) != 2 {
 		utils.ExitError("Invalid arguments: ls-files")
 	}
 
-	repository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
+	currentRepository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
 	if err != nil {
 		utils.ExitError(err.Error())
 	}
 
-	index, err := repository.ReadIndex()
+	index, err := currentRepository.ReadIndex()
 	if err != nil {
 		utils.ExitError("Cannot read index: " + err.Error())
 	}

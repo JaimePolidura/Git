@@ -19,58 +19,46 @@ const (
 	ANY    ObjectType = "none" //Used only for
 )
 
-type GitObject interface {
-	Type() ObjectType
-	Data() []byte
-
-	serializeSpecificData() []byte
-}
-
 type Object struct {
-	Type   ObjectType
-	Length int
-	Data   []byte
+	SerializableGitObject
+	Type ObjectType
 }
 
-func serializeHeader(gitObject GitObject, length int) []byte {
-	return []byte(string(gitObject.Type()) + " " + strconv.Itoa(length) + string('\x00'))
+type SerializableGitObject interface {
+	Serialize() []byte
 }
 
-func SerializeObject(object GitObject) []byte {
-	serialized := object.serializeSpecificData()
-	header := serializeHeader(object, len(serialized))
+func (o Object) Serialize() []byte {
+	serialized := o.Serialize()
+	header := []byte(string(o.Type) + " " + strconv.Itoa(len(serialized)) + string('\x00'))
 
 	return append(header, serialized...)
 }
 
-func DeserializeObjectWithType[T GitObject](reader io.Reader) (T, error) {
-	gitObject, err := DeserializeObject(reader)
-	return gitObject.(T), err
-}
-
-func DeserializeObject(reader io.Reader) (GitObject, error) {
-	commonObject, pendingToDeserialize, err := DeserializeObjectCommonHeader(reader)
-	var gitObject GitObject
+func DeserializeObject(reader io.Reader) (Object, error) {
+	commonObject, pendingToDeserialize, err := deserializeObjectCommonHeader(reader)
 
 	if err != nil {
-		return gitObject, err
+		return *commonObject, err
 	}
-
+	var gitObject SerializableGitObject
 	switch commonObject.Type {
 	case BLOB:
-		gitObject, err = deserializeBlobObject(commonObject, pendingToDeserialize)
+		gitObject, err = deserializeBlobObject(pendingToDeserialize)
 	case COMMIT:
-		gitObject, err = deserializeCommitObject(commonObject, pendingToDeserialize)
+		gitObject, err = deserializeCommitObject(pendingToDeserialize)
 	case TREE:
-		gitObject, err = deserializeTreeObject(commonObject, pendingToDeserialize)
+		gitObject, err = deserializeTreeObject(pendingToDeserialize)
 	case TAG:
-		gitObject, err = deserializeTagObject(commonObject, pendingToDeserialize)
+		gitObject, err = deserializeTagObject(pendingToDeserialize)
 	}
 
-	return gitObject, err
+	commonObject.SerializableGitObject = gitObject
+
+	return *commonObject, err
 }
 
-func DeserializeObjectCommonHeader(reader io.Reader) (*Object, []byte, error) {
+func deserializeObjectCommonHeader(reader io.Reader) (*Object, []byte, error) {
 	bytesDecompressed, err := ioutil.ReadAll(reader)
 	if err != nil {
 		return nil, []byte{}, err
@@ -85,11 +73,7 @@ func DeserializeObjectCommonHeader(reader io.Reader) (*Object, []byte, error) {
 		return nil, []byte{}, err
 	}
 
-	objectLengthBytes, offset, err := utils.ReadUntil(bytesDecompressed, offset, 0)
-	if err != nil {
-		return nil, []byte{}, err
-	}
-	objectLengthInt, err := strconv.Atoi(string(objectLengthBytes))
+	_, offset, err = utils.ReadUntil(bytesDecompressed, offset, 0)
 	if err != nil {
 		return nil, []byte{}, err
 	}
@@ -98,7 +82,7 @@ func DeserializeObjectCommonHeader(reader io.Reader) (*Object, []byte, error) {
 		return nil, []byte{}, err
 	}
 
-	return &Object{Type: objectType, Length: objectLengthInt}, restData, nil
+	return &Object{Type: objectType}, restData, nil
 }
 
 func getObjectTypeByString(objectTypeString string) (ObjectType, error) {

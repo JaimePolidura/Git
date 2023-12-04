@@ -24,8 +24,8 @@ type Repository struct {
 	Config   *ini.File
 }
 
-func (r *Repository) WriteObject(object objects.GitObject) (string, error) {
-	serializeData := objects.SerializeObject(object)
+func (r *Repository) WriteObject(object *objects.Object) (string, error) {
+	serializeData := object.Serialize()
 	sha1Hasher := sha1.New()
 	sha1Hasher.Write(serializeData)
 	shaHex := hex.EncodeToString(sha1Hasher.Sum(nil))
@@ -65,58 +65,58 @@ func (r *Repository) WriteObject(object objects.GitObject) (string, error) {
 
 func (r *Repository) ReadTreeObject(hash string) (objects.TreeObject, error) {
 	gitObject, err := r.ReadObject(hash, objects.TREE)
-	if err != nil || gitObject.Type() != objects.BLOB {
+	if err != nil {
 		return objects.TreeObject{}, err
 	}
 
-	return gitObject.(objects.TreeObject), nil
+	return gitObject.SerializableGitObject.(objects.TreeObject), nil
 }
 
 func (r *Repository) ReadBlobObject(hash string) (objects.BlobObject, error) {
 	gitObject, err := r.ReadObject(hash, objects.BLOB)
-	if err != nil || gitObject.Type() != objects.BLOB {
+	if err != nil {
 		return objects.BlobObject{}, err
 	}
 
-	return gitObject.(objects.BlobObject), nil
+	return gitObject.SerializableGitObject.(objects.BlobObject), nil
 }
 
 func (r *Repository) ReadCommitObject(hash string) (objects.CommitObject, error) {
 	gitObject, err := r.ReadObject(hash, objects.COMMIT)
-	if err != nil || gitObject.Type() != objects.COMMIT {
+	if err != nil {
 		return objects.CommitObject{}, err
 	}
 
-	return gitObject.(objects.CommitObject), nil
+	return gitObject.SerializableGitObject.(objects.CommitObject), nil
 }
 
-func (r *Repository) ReadObject(unresolvedHash string, reqType objects.ObjectType) (objects.GitObject, error) {
+func (r *Repository) ReadObject(unresolvedHash string, reqType objects.ObjectType) (objects.Object, error) {
 	if resolvedHash, err := r.ResolveObjectName(unresolvedHash, reqType); err == nil {
 		return r.readObjectByResolvedName(resolvedHash)
 	} else {
-		return nil, err
+		return objects.Object{}, err
 	}
 }
 
-func (r *Repository) readObjectByResolvedName(resolvedHash string) (objects.GitObject, error) {
+func (r *Repository) readObjectByResolvedName(resolvedHash string) (objects.Object, error) {
 	prefix, remainder := resolvedHash[:2], resolvedHash[2:]
 	objectPath := utils.Paths(r.GitDir, "objects", prefix, remainder)
 	objectFile, err := os.Open(objectPath)
 	defer objectFile.Close()
 	if err != nil {
-		return nil, errors.New("Cannot open object file: " + resolvedHash)
+		return objects.Object{}, errors.New("Cannot open object file: " + resolvedHash)
 	}
 	objectFileState, err := objectFile.Stat()
 	if err != nil {
-		return nil, errors.New("Cannot get stat from object file: " + resolvedHash)
+		return objects.Object{}, errors.New("Cannot get stat from object file: " + resolvedHash)
 	}
 	if objectFileState.IsDir() {
-		return nil, errors.New("Object file: " + resolvedHash + " cannot be a dir")
+		return objects.Object{}, errors.New("Object file: " + resolvedHash + " cannot be a dir")
 	}
 
 	objectFileZlibReader, err := zlib.NewReader(objectFile)
 	if err != nil {
-		return nil, err
+		return objects.Object{}, err
 	}
 	defer objectFileZlibReader.Close()
 
@@ -293,10 +293,10 @@ func (r *Repository) ResolveObjectName(name string, reqObjectType objects.Object
 			return candidateHash, nil
 		}
 
-		if candidateObject.Type() == objects.TAG {
-			candidateHash = candidateObject.(objects.TagObject).ObjectTag
-		} else if candidateObject.Type() == objects.COMMIT && reqObjectType == objects.TREE {
-			candidateHash = candidateObject.(objects.CommitObject).Tree
+		if candidateObject.Type == objects.TAG {
+			candidateHash = candidateObject.SerializableGitObject.(objects.TagObject).ObjectTag
+		} else if candidateObject.Type == objects.COMMIT && reqObjectType == objects.TREE {
+			candidateHash = candidateObject.SerializableGitObject.(objects.CommitObject).Tree
 		} else {
 			return "", errors.New("cannot get type")
 		}

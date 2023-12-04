@@ -7,19 +7,19 @@ import (
 	"git/src/utils"
 )
 
-// Args: main.go rev-parse <name>
+// RevParse Args: main.go rev-parse <name>
 func RevParse(args []string) {
 	if len(args) != 3 {
 		utils.ExitError("Invalid args: rev-parse <name>")
 	}
-
-	repository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
+	
+	currentRepository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
 	if err != nil {
 		utils.ExitError(err.Error())
 	}
 
 	objectName := args[2]
-	hash, err := repository.ResolveObjectName(objectName, objects.ANY)
+	hash, err := currentRepository.ResolveObjectName(objectName, objects.ANY)
 
 	if err != nil {
 		utils.ExitError(hash)

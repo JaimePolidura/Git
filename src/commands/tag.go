@@ -40,11 +40,13 @@ func createTag(repository *repository.Repository, name string, refValue string, 
 	tagNamePath := utils.Path("tags", name)
 
 	if createTagObject {
-		tagObject := objects.TagObject{
-			Object:    objects.Object{Type: objects.TAG},
-			ObjectTag: resolvedHashRefValue,
-			Tag:       tagNamePath,
-			Tagger:    "Jaime Polidura <jaime.polidura@gmail.com>",
+		tagObject := &objects.Object{
+			Type: objects.TAG,
+			SerializableGitObject: objects.TagObject{
+				ObjectTag: resolvedHashRefValue,
+				Tag:       tagNamePath,
+				Tagger:    "Jaime Polidura <jaime.polidura@gmail.com>",
+			},
 		}
 
 		if shaObjectTagWritten, err := repository.WriteObject(tagObject); err == nil {

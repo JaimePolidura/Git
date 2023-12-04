@@ -10,22 +10,22 @@ import (
 )
 
 func Status() {
-	repository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
+	currentRepository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
 	if err != nil {
 		utils.ExitError(err.Error())
 	}
-	index, err := repository.ReadIndex()
+	repositoryIndex, err := currentRepository.ReadIndex()
 	if err != nil {
 		utils.ExitError(err.Error())
 	}
 
-	printBranchStatus(repository)
-	printChangesBetweenHeadAndIndex(repository, index)
-	printChangesBetweenWorktreeAndIndex(repository, index)
+	printBranchStatus(currentRepository)
+	printChangesBetweenHeadAndIndex(currentRepository, repositoryIndex)
+	printChangesBetweenWorktreeAndIndex(currentRepository, repositoryIndex)
 }
 
 // files not in stagging area
-func printChangesBetweenWorktreeAndIndex(repository *repository.Repository, index index.IndexObject) {
+func printChangesBetweenWorktreeAndIndex(repository *repository.Repository, index *index.IndexObject) {
 	fmt.Println("Changes not stagged for commit:")
 
 	fileNamesInWorkTree := utils.GetAllSubfiles(repository.WorkTree)
@@ -56,7 +56,7 @@ func printChangesBetweenWorktreeAndIndex(repository *repository.Repository, inde
 }
 
 // Stagging area compared to head
-func printChangesBetweenHeadAndIndex(repository *repository.Repository, index index.IndexObject) {
+func printChangesBetweenHeadAndIndex(repository *repository.Repository, index *index.IndexObject) {
 	fmt.Println("Changes to be commited:")
 
 	treeObjectMapHead := getTreeObjectMapFromHEAD(repository)
