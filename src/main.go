@@ -31,6 +31,8 @@ func main() {
 		commands.LsFiles(os.Args)
 	case "add":
 		commands.Add(os.Args)
+	case "commit":
+		commands.Commit(os.Args)
 	default:
 		panic("Unknown command")
 	}

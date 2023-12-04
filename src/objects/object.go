@@ -21,7 +21,6 @@ const (
 
 type GitObject interface {
 	Type() ObjectType
-	Length() int
 	Data() []byte
 
 	serializeSpecificData() []byte
@@ -33,13 +32,13 @@ type Object struct {
 	Data   []byte
 }
 
-func serializeHeader(gitObject GitObject) []byte {
-	return []byte(string(gitObject.Type()) + " " + strconv.Itoa(gitObject.Length()) + string('\x00'))
+func serializeHeader(gitObject GitObject, length int) []byte {
+	return []byte(string(gitObject.Type()) + " " + strconv.Itoa(length) + string('\x00'))
 }
 
 func SerializeObject(object GitObject) []byte {
-	header := serializeHeader(object)
 	serialized := object.serializeSpecificData()
+	header := serializeHeader(object, len(serialized))
 
 	return append(header, serialized...)
 }

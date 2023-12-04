@@ -21,7 +21,7 @@ type TreeEntry struct {
 }
 
 func (t TreeObject) serializeSpecificData() []byte {
-	t.shortEntries()
+	t.sortEntries()
 	var bufferResult bytes.Buffer
 
 	for _, entry := range t.Entries {
@@ -31,7 +31,7 @@ func (t TreeObject) serializeSpecificData() []byte {
 	return bufferResult.Bytes()
 }
 
-func (t TreeObject) shortEntries() {
+func (t TreeObject) sortEntries() {
 	sort.Slice(t.Entries, func(i, j int) bool {
 		entryA := t.Entries[i]
 		entryB := t.Entries[j]

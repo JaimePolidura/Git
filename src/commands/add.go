@@ -18,9 +18,9 @@ func Add(args []string) {
 		utils.ExitError("Invalid args: add <file names in current path...>")
 	}
 	currentPath := utils.CurrentPath()
-	repository, _, err := repository.FindCurrentRepository(currentPath)
+	currentRepository, _, err := repository.FindCurrentRepository(currentPath)
 	utils.Check(err, err.Error())
-	index, err := repository.ReadIndex()
+	indexRepository, err := currentRepository.ReadIndex()
 	utils.Check(err, err.Error())
 
 	pathsToAdd := args[2:]
@@ -28,52 +28,54 @@ func Add(args []string) {
 	for _, pathToAdd := range pathsToAdd {
 		isAbsolute := strings.HasPrefix(pathToAdd, "/")
 		allSubfilesMode := pathToAdd == "."
-		if !allSubfilesMode && isAbsolute && !strings.Contains(pathToAdd, repository.WorkTree) {
+		if !allSubfilesMode && isAbsolute && !strings.Contains(pathToAdd, currentRepository.WorkTree) {
 			fmt.Println("Cannot add " + pathToAdd + " doesnt belong to repository")
 		}
 		if !allSubfilesMode && !utils.CheckFileOrDirExists(pathToAdd) {
 			fmt.Println("Cannot add " + pathToAdd + " doest exist")
 		}
 
-		relativePathRepository := repository.GetRelativePathRepository(pathToAdd)
+		relativePathRepository := currentRepository.GetRelativePathRepository(pathToAdd)
 
 		if allSubfilesMode {
-			index = addSubfiles(repository, index, relativePathRepository)
+			addSubfiles(currentRepository, indexRepository, relativePathRepository)
 		} else {
-			index = add(repository, index, relativePathRepository)
+			add(currentRepository, indexRepository, relativePathRepository)
 		}
 	}
 
-	if err := repository.WriteIndex(index); err != nil {
+	if err := currentRepository.WriteIndex(indexRepository); err != nil {
 		fmt.Println("Cannot write to INDEX: " + err.Error())
 	}
 }
 
-func addSubfiles(repository *repository.Repository, indexObject *index.IndexObject, pathRelativeRepo string) *index.IndexObject {
+func addSubfiles(currentRepository *repository.Repository, indexObject *index.IndexObject, pathRelativeRepo string) *index.IndexObject {
 	children, _ := os.ReadDir(pathRelativeRepo)
 	for _, child := range children {
-		add(repository, indexObject, utils.Paths(pathRelativeRepo, child.Name()))
+		add(currentRepository, indexObject, utils.Paths(pathRelativeRepo, child.Name()))
 	}
 
 	return indexObject
 }
 
-func add(repository *repository.Repository, indexObject *index.IndexObject, pathRelativeRepo string) *index.IndexObject {
+func add(currentRepository *repository.Repository, indexObject *index.IndexObject, pathRelativeRepo string) {
 	stat, err := os.Stat(pathRelativeRepo)
 	if err != nil {
 		fmt.Println("Cannot get stat info of file " + pathRelativeRepo)
 	}
 
-	if stat.IsDir() {
-		addSubfiles(repository, indexObject, pathRelativeRepo)
-	} else {
-		addFile(repository, indexObject, pathRelativeRepo, stat)
+	if ignored, _ := currentRepository.IsIgnored(pathRelativeRepo); ignored {
+		return
 	}
 
-	return indexObject
+	if stat.IsDir() {
+		addSubfiles(currentRepository, indexObject, pathRelativeRepo)
+	} else {
+		addFile(indexObject, pathRelativeRepo, stat)
+	}
 }
 
-func addFile(repository *repository.Repository, indexObject *index.IndexObject, pathRelativeRepo string, stat os.FileInfo) {
+func addFile(indexObject *index.IndexObject, pathRelativeRepo string, stat os.FileInfo) {
 	indexEntry, indexEntryExists := indexObject.Entries[pathRelativeRepo]
 
 	if indexEntryExists {
