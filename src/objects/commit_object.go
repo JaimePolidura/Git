@@ -43,7 +43,7 @@ func (c CommitObject) HasParent() bool {
 func deserializeCommitObject(toDeserialize []byte) (CommitObject, error) {
 	deserializedKeyValue, remainingData := keyValueListDeserialize(toDeserialize)
 	if allContained := deserializedKeyValue.Contains("tree", "parent", "author", "committer"); !allContained {
-		return CommitObject{}, errors.New("Invalid key value format. Missing fields")
+		return CommitObject{}, errors.New("invalid key value format. Missing fields")
 	}
 
 	commitObject := CommitObject{
@@ -59,5 +59,5 @@ func deserializeCommitObject(toDeserialize []byte) (CommitObject, error) {
 }
 
 func (c CommitObject) Serialize() []byte {
-	return append(keyValueListSerialize(c.keyValue))
+	return append(keyValueListSerialize(c.keyValue), []byte(c.Message)...)
 }

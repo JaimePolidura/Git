@@ -1,7 +1,6 @@
 package objects
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -34,8 +33,6 @@ func TestCommitObject_Deserialize(t *testing.T) {
 	bytes := []byte("tree 29ff16c9c14e2652b22f8b78bb08a5a07930c147\nparent 206941306e8a8af65b66eaaaea388a7ae24d49a0\n" +
 		"author Thibault Polge <thibault@thb.lt> 1527025023 +0200\ncommitter Thibault Polge <thibault@thb.lt> 1527025044 +0200\n\nCreate first commit")
 
-	commonObject := &Object{Type: COMMIT}
-
 	object, err := deserializeCommitObject(bytes)
 
 	//fmt.Println(err.Error())
@@ -55,9 +52,6 @@ func TestCommitObject_Serialize(t *testing.T) {
 	object, _ := deserializeCommitObject(bytes)
 
 	serializedCommit := object.Serialize()
-
-	a := string(serializedCommit)
-	fmt.Println(a)
 
 	assert.Equal(t, serializedCommit, bytes)
 }
