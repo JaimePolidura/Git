@@ -22,10 +22,10 @@ func Commit(args []string) {
 		utils.ExitError(err.Error())
 	}
 
-	commitMessage := strings.Join(args[3:], " ")
+	commitMessage := strings.Trim(strings.Join(args[3:], " "), "\"")
 
 	index, err := currentRepository.ReadIndex()
-	utils.Check(err, err.Error())
+	utils.CheckError(err)
 
 	rootTreeSha := createBlobsAndTrees(index.ToTree(), currentRepository)
 
@@ -34,21 +34,23 @@ func Commit(args []string) {
 	fmt.Println("Commited changes:", commitSha)
 }
 
-func createCommitObject(treeSha string, commitMessage string, repository *repository.Repository) string {
-	head, err := repository.ResolveObjectName("HEAD", objects.ANY)
-	utils.Check(err, "Cannot get HEAD, you might me working on a old commit")
+func createCommitObject(treeSha string, commitMessage string, currentRepository *repository.Repository) string {
+	head, err := currentRepository.ResolveObjectName("HEAD", objects.ANY)
+	if !repository.IsNotCommitError(err) {
+		utils.Check(err, "Cannot get HEAD, you might me working on a old commit")
+	}
 
 	commitObject := objects.CreateCommitObject(treeSha, head, "Jaime", commitMessage)
 
-	commitSha, err := repository.WriteObject(commitObject)
-	utils.Check(err, err.Error())
+	commitSha, err := currentRepository.WriteObject(commitObject)
+	utils.CheckError(err)
 
-	currentBranch, _, err := repository.GetActiveBranch()
-	utils.Check(err, err.Error())
+	currentBranch, _, err := currentRepository.GetActiveBranch()
+	utils.CheckError(err)
 
-	file, err := os.Open(utils.Paths(repository.GitDir, "refs", "heads", currentBranch))
+	file, err := os.Open(utils.Paths(currentRepository.GitDir, "refs", "heads", currentBranch))
 	defer file.Close()
-	utils.Check(err, err.Error())
+	utils.CheckError(err)
 
 	file.Write([]byte(commitSha))
 
@@ -93,13 +95,13 @@ func createAndGetSha(node *index.IndexObjectTreeNode, repository *repository.Rep
 		indexEntryNode := node.Entry
 		file, err := os.Open(indexEntryNode.FullPathName)
 		defer file.Close()
-		utils.Check(err, err.Error())
+		utils.CheckError(err)
 		bytes, err := ioutil.ReadAll(file)
-		utils.Check(err, err.Error())
+		utils.CheckError(err)
 
 		blobObject := objects.CreateBlobObject(bytes)
 		sha, err := repository.WriteObject(blobObject)
-		utils.Check(err, err.Error())
+		utils.CheckError(err)
 
 		return sha
 	} else {

@@ -161,6 +161,10 @@ func (r *Repository) WriteRef(reference objects.Reference) {
 }
 
 func (r *Repository) IsIgnored(pathInRepository string) (bool, error) {
+	if strings.Contains(pathInRepository, ".git/") {
+		return true, nil
+	}
+
 	gitIgnores, err := r.readGitIgnores(pathInRepository)
 	if err != nil {
 		return false, err
@@ -226,7 +230,7 @@ func (r *Repository) resolveRefRecursive(namePath string) (objects.Reference, er
 	file, err := os.Open(r.GitDir + namePath)
 	defer file.Close()
 	if err != nil {
-		return objects.Reference{}, errors.New("The reposiory has no commits")
+		return objects.Reference{}, NoCommits{}
 	}
 
 	bytes, err := ioutil.ReadAll(file)
@@ -428,6 +432,7 @@ func InitializeRepository(workTreePath string) *Repository {
 	utils.CreateDirIfNotExists(gitDir, "refs")
 	utils.CreateDirIfNotExists(utils.Path(gitDir, "refs"), "heads")
 	utils.CreateDirIfNotExists(utils.Path(gitDir, "refs"), "tags")
+	utils.CreateFileIfNotExists(utils.Paths(gitDir, "refs", "heads"), "master")
 
 	utils.CreateFileIfNotExistsWithContent(gitDir, "description", "Unnamed repository; edit this file 'description' to name the repository.\n")
 	utils.CreateFileIfNotExistsWithContent(gitDir, "HEAD", "ref: refs/heads/master\n")

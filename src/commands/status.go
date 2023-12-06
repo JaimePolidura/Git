@@ -19,7 +19,6 @@ func Status() {
 		utils.ExitError("No commits haven been made in this repository")
 	}
 
-	fmt.Println("La universidad europea del atlantico")
 	printBranchStatus(currentRepository)
 	printChangesBetweenHeadAndIndex(currentRepository, repositoryIndex)
 	printChangesBetweenWorktreeAndIndex(currentRepository, repositoryIndex)
