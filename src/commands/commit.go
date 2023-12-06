@@ -48,11 +48,12 @@ func createCommitObject(treeSha string, commitMessage string, currentRepository 
 	currentBranch, _, err := currentRepository.GetActiveBranch()
 	utils.CheckError(err)
 
-	file, err := os.Open(utils.Paths(currentRepository.GitDir, "refs", "heads", currentBranch))
+	file, err := os.OpenFile(utils.Paths(currentRepository.GitDir, "refs", "heads", currentBranch), os.O_WRONLY, 07777)
 	defer file.Close()
 	utils.CheckError(err)
 
-	file.Write([]byte(commitSha))
+	_, err = file.Write([]byte(commitSha))
+	utils.CheckError(err)
 
 	return commitSha
 }
@@ -85,7 +86,7 @@ func createTreeObject(children map[string]*index.IndexObjectTreeNode, parent *in
 	}
 
 	treeSha, err := repository.WriteObject(treeObject)
-	utils.Check(err, err.Error())
+	utils.CheckError(err)
 
 	return treeSha
 }

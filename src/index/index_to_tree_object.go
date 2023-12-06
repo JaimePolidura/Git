@@ -1,15 +1,14 @@
 package index
 
 import (
-	"os"
 	"strings"
 )
 
 type IndexObjectTreeNode struct {
 	Entry    IndexEntry
-	Children map[string]*IndexObjectTreeNode
+	Children map[string]*IndexObjectTreeNode //Keys are the name of the files, not the pathds
 	Root     bool
-	Name     string
+	Name     string //Name of the file, not the path
 }
 
 func createRootTreeNode() *IndexObjectTreeNode {
@@ -30,9 +29,9 @@ func createChildDirNode(dirName string) *IndexObjectTreeNode {
 	}
 }
 
-func createChildFileNode(fileName string) *IndexObjectTreeNode {
+func createChildFileNode(fileName string, entry IndexEntry) *IndexObjectTreeNode {
 	return &IndexObjectTreeNode{
-		Entry:    IndexEntry{},
+		Entry:    entry,
 		Children: make(map[string]*IndexObjectTreeNode, 0),
 		Root:     false,
 		Name:     fileName,
@@ -43,7 +42,7 @@ func (self *IndexObject) ToTree() *IndexObjectTreeNode {
 	root := createRootTreeNode()
 
 	for pathIndexEntry, indexEntry := range self.Entries {
-		splitedBySep := strings.Split(pathIndexEntry, string(os.PathSeparator))
+		splitedBySep := strings.Split(pathIndexEntry, "/")
 
 		if len(splitedBySep) > 1 {
 			parents := splitedBySep[:len(splitedBySep)-1]
@@ -62,9 +61,9 @@ func (self *IndexObject) ToTree() *IndexObjectTreeNode {
 				}
 			}
 
-			lastNode.Children[child] = createChildFileNode(child)
+			lastNode.Children[child] = createChildFileNode(child, indexEntry)
 		} else {
-			root.Children[pathIndexEntry] = createChildFileNode(indexEntry.FullPathName)
+			root.Children[pathIndexEntry] = createChildFileNode(indexEntry.FullPathName, indexEntry)
 		}
 	}
 

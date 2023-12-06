@@ -362,9 +362,9 @@ func (r *Repository) GetActiveBranch() (_name string, _detached bool, _err error
 	headContentString := string(bytes)
 
 	if strings.HasPrefix(headContentString, "ref: refs/heads/") {
-		return string(bytes[16:]), false, nil
+		return strings.TrimRight(string(bytes[16:]), "\n"), false, nil
 	} else {
-		return headContentString, true, nil
+		return strings.TrimRight(headContentString, "\n"), true, nil
 	}
 }
 

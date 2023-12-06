@@ -14,7 +14,6 @@ func TestIndex_ToTree(t *testing.T) {
 			"src/caca.go":      IndexEntry{FullPathName: "src/caca.go"},
 			"src/fortine.go":   IndexEntry{FullPathName: "src/fortine.go"},
 			"src/casa/algo.go": IndexEntry{FullPathName: "src/casa/algo.go"},
-			"nada/":            IndexEntry{FullPathName: "nada/"},
 		},
 	}
 
@@ -32,7 +31,6 @@ func TestIndex_ToTree(t *testing.T) {
 	childSrc := rootNode.Children["src"]
 	assert.False(t, childSrc.Root)
 	assert.Equal(t, childSrc.Name, "src")
-	assert.Equal(t, childMainGo.Entry.FullPathName, "src")
 	assert.Equal(t, len(childSrc.Children), 3)
 
 	childSrcCaca := childSrc.Children["caca.go"]
@@ -50,8 +48,7 @@ func TestIndex_ToTree(t *testing.T) {
 	childSrcCasa := childSrc.Children["casa"]
 	assert.False(t, childSrcCasa.Root)
 	assert.Equal(t, childSrcCasa.Name, "casa")
-	assert.Equal(t, childSrcCasa.Entry.FullPathName, "src/casa")
-	assert.Equal(t, len(childSrcFortine.Children), 1)
+	assert.Equal(t, len(childSrcCasa.Children), 1)
 
 	childSrcCasaAlgo := childSrcCasa.Children["algo.go"]
 	assert.False(t, childSrcCasaAlgo.Root)

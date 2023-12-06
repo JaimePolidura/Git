@@ -22,7 +22,7 @@ func CreateCommitObject(treeSha string, parent string, author string, message st
 		Author:    author,
 		Committer: author,
 		Message:   message,
-		keyValue:  &utils.NavigationMap[string, string]{},
+		keyValue:  utils.CreateNavigationMap[string, string](),
 	}
 	commitObject.keyValue.Put("tree", treeSha)
 	commitObject.keyValue.Put("parent", parent)
