@@ -34,7 +34,7 @@ func Log(args []string) {
 }
 
 func printCommit(commitObject objects.CommitObject, sha string) {
-	fmt.Println("commit " + sha)
+	fmt.Println("Commit " + sha)
 	fmt.Println("Author " + commitObject.Author)
 	fmt.Println("")
 	fmt.Println("\t" + commitObject.Message)

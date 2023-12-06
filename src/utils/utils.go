@@ -104,7 +104,7 @@ func ExitError(message string) {
 
 func IsValidGitHash(hash string) bool {
 	match, err := regexp.MatchString("^[0-9A-Fa-f]{4,40}$", hash)
-	return err != nil && match
+	return err == nil && match
 }
 
 func CheckFileOrDirExists(path string) bool {

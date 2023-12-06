@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// HashObject Takes file and creates a blob object in .git. It returns the sha
 // HashObject Args: main.go hash-object -t blob -w <blob path>
 func HashObject(args []string) {
 	if len(args) != 6 {

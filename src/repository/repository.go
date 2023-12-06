@@ -222,7 +222,7 @@ func (r *Repository) resolveRefRecursive(namePath string) (objects.Reference, er
 	file, err := os.Open(r.GitDir + namePath)
 	//This is normal in one specific case: we're looking for HEAD on a new repository with no commits
 	if err != nil {
-		return objects.Reference{}, nil
+		return objects.Reference{}, err
 	}
 	defer file.Close()
 
@@ -311,18 +311,15 @@ func (r *Repository) getCandidatesResolveObjectName(objectName string) ([]string
 
 	candidatesHash := make([]string, 0)
 
-	isGitHash := utils.IsValidGitHash(objectName)
-	if isGitHash {
+	if utils.IsValidGitHash(objectName) {
 		prefix := objectName[:2]
 		remaining := objectName[2:]
-		pathPrefix := utils.Path(r.GitDir, prefix)
+		pathPrefix := utils.Paths(r.GitDir, "objects", prefix)
 		if utils.CheckFileOrDirExists(pathPrefix) {
-			if dirs, err := os.ReadDir(pathPrefix); err == nil {
-				for _, file := range dirs {
-					if strings.HasPrefix(file.Name(), remaining) {
-						candidatesHash = append(candidatesHash, prefix+file.Name())
-						break
-					}
+			dirs, _ := os.ReadDir(pathPrefix)
+			for _, file := range dirs {
+				if strings.HasPrefix(file.Name(), remaining) {
+					candidatesHash = append(candidatesHash, prefix+file.Name())
 				}
 			}
 		}

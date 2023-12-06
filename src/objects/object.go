@@ -29,7 +29,7 @@ type SerializableGitObject interface {
 }
 
 func (o Object) Serialize() []byte {
-	serialized := o.Serialize()
+	serialized := o.SerializableGitObject.Serialize()
 	header := []byte(string(o.Type) + " " + strconv.Itoa(len(serialized)) + string('\x00'))
 
 	return append(header, serialized...)

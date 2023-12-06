@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// CatFile Takes sha of gitobject and prints its contents
 // CatFile Args: main.go cat-file <sha>
 func CatFile(args []string) {
 	if len(args) != 3 {

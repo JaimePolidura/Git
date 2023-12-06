@@ -104,7 +104,7 @@ func (self *IndexEntry) Serialize() []byte {
 
 func Deserialize(reader io.Reader) (*IndexObject, error) {
 	allBytes, err := ioutil.ReadAll(reader)
-	
+
 	if err != nil {
 		return nil, nil
 	}
