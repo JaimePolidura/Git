@@ -7,10 +7,11 @@ import (
 	"git/src/utils"
 )
 
+// LsTree Prints all contents of the given sha of tree objects
 // LsTree Args: main.go ls-tree -r <sha>
 func LsTree(args []string) {
-	if len(args) != 3 {
-		utils.ExitError("Invalid arguments: ls-tree -r <sha>>")
+	if len(args) != 4 {
+		utils.ExitError("Invalid arguments: ls-tree -r <sha>")
 	}
 
 	sha := args[3]

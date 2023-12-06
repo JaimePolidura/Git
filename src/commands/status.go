@@ -16,9 +16,10 @@ func Status() {
 	}
 	repositoryIndex, err := currentRepository.ReadIndex()
 	if err != nil {
-		utils.ExitError(err.Error())
+		utils.ExitError("No commits haven been made in this repository")
 	}
 
+	fmt.Println("La universidad europea del atlantico")
 	printBranchStatus(currentRepository)
 	printChangesBetweenHeadAndIndex(currentRepository, repositoryIndex)
 	printChangesBetweenWorktreeAndIndex(currentRepository, repositoryIndex)
@@ -119,8 +120,8 @@ func printBranchStatus(repository *repository.Repository) {
 	}
 
 	if detatched {
-		fmt.Println("HEAD detached at ", detatched)
+		fmt.Println("HEAD detached at", detatched)
 	} else {
-		fmt.Println("On branch ", branchName)
+		fmt.Println("On branch", branchName)
 	}
 }

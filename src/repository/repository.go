@@ -124,6 +124,8 @@ func (r *Repository) readObjectByResolvedName(resolvedHash string) (objects.Obje
 }
 
 func (r *Repository) ReadIndex() (*index.IndexObject, error) {
+	utils.CreateFileIfNotExists(r.GitDir, "index")
+
 	if file, err := os.Open(utils.Path(r.GitDir, "index")); err == nil {
 		return index.Deserialize(file)
 	} else {
@@ -145,31 +147,33 @@ func (r *Repository) WriteIndex(index *index.IndexObject) error {
 	}
 }
 
-func (r *Repository) GetRelativePathRepository(path string) string {
+func (r *Repository) GetPathFileInRepository(path string) string {
 	isAbsolute := strings.HasPrefix(path, "/")
-	absultePath := path
-	if !isAbsolute {
-		absultePath = utils.Path(utils.CurrentPath(), path)
+	if isAbsolute {
+		return path
+	} else {
+		return utils.Paths(utils.CurrentPath(), path)
 	}
-
-	return strings.Trim(strings.Split(absultePath, r.WorkTree+"/")[0], " ")
 }
 
 func (r *Repository) WriteRef(reference objects.Reference) {
 	utils.CreateFileIfNotExistsWithContent(utils.Paths(r.GitDir, "refs"), reference.NamePath, reference.Value+"\n")
 }
 
-func (r *Repository) IsIgnored(pathToCheckIfIgnored string) (bool, error) {
-	gitIgnores, err := r.readGitIgnores(pathToCheckIfIgnored)
+func (r *Repository) IsIgnored(pathInRepository string) (bool, error) {
+	gitIgnores, err := r.readGitIgnores(pathInRepository)
 	if err != nil {
 		return false, err
 	}
+	if len(gitIgnores) == 0 {
+		return false, nil
+	}
 
-	parent := filepath.Dir(pathToCheckIfIgnored)
+	parent := filepath.Dir(pathInRepository)
 
 	for {
 		if gitIgnore, gitIgnoreExists := gitIgnores[parent]; gitIgnoreExists {
-			matchesSomeIgnore, err := gitIgnore.IsIgnored(pathToCheckIfIgnored)
+			matchesSomeIgnore, err := gitIgnore.IsIgnored(pathInRepository)
 
 			if err != nil {
 				return false, err
@@ -188,7 +192,7 @@ func (r *Repository) IsIgnored(pathToCheckIfIgnored string) (bool, error) {
 	return false, nil
 }
 
-func (r *Repository) readGitIgnores(relativeRepositoryPath string) (map[string]ignore.GitIgnore, error) {
+func (r *Repository) readGitIgnores(pathInRepository string) (map[string]ignore.GitIgnore, error) {
 	index, err := r.ReadIndex()
 	if err != nil {
 		return nil, err
@@ -220,11 +224,10 @@ func (r *Repository) ResolveRef(namePath string) (objects.Reference, error) {
 
 func (r *Repository) resolveRefRecursive(namePath string) (objects.Reference, error) {
 	file, err := os.Open(r.GitDir + namePath)
-	//This is normal in one specific case: we're looking for HEAD on a new repository with no commits
-	if err != nil {
-		return objects.Reference{}, err
-	}
 	defer file.Close()
+	if err != nil {
+		return objects.Reference{}, errors.New("The reposiory has no commits")
+	}
 
 	bytes, err := ioutil.ReadAll(file)
 	if err != nil {
@@ -333,7 +336,12 @@ func (r *Repository) getCandidatesResolveObjectName(objectName string) ([]string
 		candidatesHash = append(candidatesHash, ref.Value)
 	}
 
-	return candidatesHash, nil
+	if len(candidatesHash) == 0 {
+		return candidatesHash, errors.New("Cannot find object with name " + objectName)
+	} else {
+		return candidatesHash, nil
+	}
+
 }
 
 func (r *Repository) GetActiveBranch() (_name string, _detached bool, _err error) {
@@ -360,7 +368,8 @@ func FindCurrentRepository(currentPath string) (*Repository, string, error) {
 	paths := strings.Split(currentPath, string(filepath.Separator))
 
 	for i := 0; i < len(paths); i++ {
-		actualPath := utils.JoinStrings(paths[:len(paths)-i])
+		actualPath := "/" + utils.Paths(paths[:len(paths)-i]...)
+
 		if _, err := os.Open(utils.Path(actualPath, ".git")); err == nil {
 			return CreateRepositoryObject(actualPath), actualPath, nil
 		}

@@ -7,6 +7,7 @@ import (
 	"strconv"
 )
 
+// LsFiles Displays all entries form index file
 // LsFiles Args: maing.go ls-files
 func LsFiles(args []string) {
 	if len(args) != 2 {
@@ -28,5 +29,4 @@ func LsFiles(args []string) {
 	for _, entry := range index.Entries {
 		fmt.Println("\t", entry.FullPathName, "inode:", entry.Ino, "device:", entry.Dev, "size:", entry.Fsize, "sha:", entry.Sha)
 	}
-
 }

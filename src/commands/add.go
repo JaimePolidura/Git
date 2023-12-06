@@ -19,9 +19,9 @@ func Add(args []string) {
 	}
 	currentPath := utils.CurrentPath()
 	currentRepository, _, err := repository.FindCurrentRepository(currentPath)
-	utils.Check(err, err.Error())
+	utils.CheckError(err)
 	indexRepository, err := currentRepository.ReadIndex()
-	utils.Check(err, err.Error())
+	utils.CheckError(err)
 
 	pathsToAdd := args[2:]
 
@@ -35,12 +35,12 @@ func Add(args []string) {
 			fmt.Println("Cannot add " + pathToAdd + " doest exist")
 		}
 
-		relativePathRepository := currentRepository.GetRelativePathRepository(pathToAdd)
+		pathInRepository := currentRepository.GetPathFileInRepository(pathToAdd)
 
 		if allSubfilesMode {
-			addSubfiles(currentRepository, indexRepository, relativePathRepository)
+			addSubfiles(currentRepository, indexRepository, pathInRepository)
 		} else {
-			add(currentRepository, indexRepository, relativePathRepository)
+			add(currentRepository, indexRepository, pathInRepository)
 		}
 	}
 
@@ -84,6 +84,7 @@ func addFile(indexObject *index.IndexObject, pathRelativeRepo string, stat os.Fi
 			indexObject.Entries[pathRelativeRepo] = index.CreateIndexEntry(stat, pathRelativeRepo, getSha(pathRelativeRepo))
 		}
 	} else {
+		fmt.Println(pathRelativeRepo)
 		indexObject.Entries[pathRelativeRepo] = index.CreateIndexEntry(stat, pathRelativeRepo, getSha(pathRelativeRepo))
 	}
 }
@@ -91,10 +92,10 @@ func addFile(indexObject *index.IndexObject, pathRelativeRepo string, stat os.Fi
 func getSha(filePath string) string {
 	file, err := os.Open(filePath)
 	defer file.Close()
-	utils.Check(err, err.Error())
+	utils.CheckError(err)
 
 	bytes, err := ioutil.ReadAll(file)
-	utils.Check(err, err.Error())
+	utils.CheckError(err)
 
 	sha1Hasher := sha1.New()
 	sha1Hasher.Write(bytes)

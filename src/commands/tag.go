@@ -39,15 +39,10 @@ func createTag(repository *repository.Repository, name string, refValue string, 
 
 	tagNamePath := utils.Path("tags", name)
 
+	fmt.Println(resolvedHashRefValue)
+
 	if createTagObject {
-		tagObject := &objects.Object{
-			Type: objects.TAG,
-			SerializableGitObject: objects.TagObject{
-				ObjectTag: resolvedHashRefValue,
-				Tag:       tagNamePath,
-				Tagger:    "Jaime Polidura <jaime.polidura@gmail.com>",
-			},
-		}
+		tagObject := objects.CreateTagObject(resolvedHashRefValue, tagNamePath, "Jaime Polidura <jaime.polidura@gmail.com>")
 
 		if shaObjectTagWritten, err := repository.WriteObject(tagObject); err == nil {
 			repository.WriteRef(objects.Reference{NamePath: tagNamePath, Value: shaObjectTagWritten})
@@ -63,6 +58,10 @@ func listTags(repository *repository.Repository) {
 	tags, err := repository.GetAllRefs()
 	if err != nil {
 		utils.ExitError("Cannot get references: " + err.Error())
+	}
+	if len(tags) == 0 {
+		fmt.Println("Not tags found for this repository")
+		return
 	}
 
 	for refPath, refValue := range tags {

@@ -9,7 +9,7 @@ import (
 
 // Log Args: main.go log <sha>
 func Log(args []string) {
-	if len(args) != 3 {
+	if len(args) < 2 {
 		utils.ExitError("Invalid arguments: log <sha>")
 	}
 

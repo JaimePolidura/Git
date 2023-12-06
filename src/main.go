@@ -19,6 +19,8 @@ func main() {
 		commands.CatFile(os.Args)
 	case "hash-object":
 		commands.HashObject(os.Args)
+	case "check-ignore":
+		commands.CheckIgnore(os.Args)
 	case "log":
 		commands.Log(os.Args)
 	case "ls-tree":
@@ -29,6 +31,10 @@ func main() {
 		commands.Tag(os.Args)
 	case "ls-files":
 		commands.LsFiles(os.Args)
+	case "status":
+		commands.Status()
+	case "rev-parse":
+		commands.RevParse(os.Args)
 	case "add":
 		commands.Add(os.Args)
 	case "commit":

@@ -9,15 +9,6 @@ import (
 	"regexp"
 )
 
-func JoinStrings(strings []string) string {
-	resultString := ""
-	for _, actualString := range strings {
-		resultString = resultString + actualString
-	}
-
-	return resultString
-}
-
 func CreateDirIfNotExists(path string, fileName string) {
 	fullPathFileName := Path(path, fileName)
 	Check(os.Mkdir(fullPathFileName, os.ModePerm), "Cannot create file "+fullPathFileName)
@@ -25,9 +16,12 @@ func CreateDirIfNotExists(path string, fileName string) {
 
 func CreateFileIfNotExists(path string, fileName string) {
 	fileFullPath := Path(path, fileName)
-	file, err := os.Create(fileFullPath)
-	Check(err, "Cannot create file "+fileFullPath)
-	file.Close()
+
+	if _, err := os.Stat(fileFullPath); os.IsNotExist(err) {
+		file, err := os.Create(fileFullPath)
+		Check(err, "Cannot create file "+fileFullPath)
+		file.Close()
+	}
 }
 
 func CreateFileIfNotExistsWithContent(path string, fileName string, initContent string) {
@@ -94,6 +88,12 @@ func Paths(paths ...string) string {
 func Check(err error, message string) {
 	if err != nil {
 		ExitError(message)
+	}
+}
+
+func CheckError(err error) {
+	if err != nil {
+		ExitError(err.Error())
 	}
 }
 
