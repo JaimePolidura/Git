@@ -22,6 +22,10 @@ func Commit(args []string) {
 		utils.ExitError(err.Error())
 	}
 
+	if _, detached, _ := currentRepository.GetActiveBranch(); detached {
+		utils.ExitError("You cannot commit changes while you are in a detached branch. You will have to checkout to head")
+	}
+
 	commitMessage := strings.Trim(strings.Join(args[3:], " "), "\"")
 
 	index, err := currentRepository.ReadIndex()
@@ -35,12 +39,8 @@ func Commit(args []string) {
 }
 
 func createCommitObject(treeSha string, commitMessage string, currentRepository *repository.Repository) string {
-	head, err := currentRepository.ResolveObjectName("HEAD", objects.ANY)
-	if !repository.IsNotCommitError(err) {
-		utils.Check(err, "Cannot get HEAD, you might me working on a old commit")
-	}
-
-	commitObject := objects.CreateCommitObject(treeSha, head, "Jaime", commitMessage)
+	parentCommit := getParentCommit(currentRepository)
+	commitObject := objects.CreateCommitObject(treeSha, parentCommit, "Jaime", commitMessage)
 
 	commitSha, err := currentRepository.WriteObject(commitObject)
 	utils.CheckError(err)
@@ -56,6 +56,17 @@ func createCommitObject(treeSha string, commitMessage string, currentRepository 
 	utils.CheckError(err)
 
 	return commitSha
+}
+
+func getParentCommit(currentRepository *repository.Repository) string {
+	head, _, err := currentRepository.ResolveObjectName("HEAD", objects.ANY)
+	firstCommit := repository.IsNoCommitError(err)
+
+	if firstCommit {
+		return objects.NO_PARENT_COMMIT_SHA
+	} else {
+		return head
+	}
 }
 
 func createBlobsAndTrees(node *index.IndexObjectTreeNode, repository *repository.Repository) string {

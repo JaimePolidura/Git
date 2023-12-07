@@ -37,7 +37,7 @@ func CreateTagObject(objectTag string, tag string, tagger string) *Object {
 
 func deserializeTagObject(toDeserialize []byte) (TagObject, error) {
 	deserializedKeyValue, _ := keyValueListDeserialize(toDeserialize)
-	if allContained := deserializedKeyValue.Contains("objectTag", "tagger", "tag"); !allContained {
+	if allContained := deserializedKeyValue.ContainsAll("objectTag", "tagger", "tag"); !allContained {
 		return TagObject{}, errors.New("Invalid key value format. Missing fields")
 	}
 

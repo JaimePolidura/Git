@@ -91,7 +91,7 @@ func (r *Repository) ReadCommitObject(hash string) (objects.CommitObject, error)
 }
 
 func (r *Repository) ReadObject(unresolvedHash string, reqType objects.ObjectType) (objects.Object, error) {
-	if resolvedHash, err := r.ResolveObjectName(unresolvedHash, reqType); err == nil {
+	if resolvedHash, _, err := r.ResolveObjectName(unresolvedHash, reqType); err == nil {
 		return r.readObjectByResolvedName(resolvedHash)
 	} else {
 		return objects.Object{}, err
@@ -227,7 +227,7 @@ func (r *Repository) ResolveRef(namePath string) (objects.Reference, error) {
 }
 
 func (r *Repository) resolveRefRecursive(namePath string) (objects.Reference, error) {
-	file, err := os.Open(r.GitDir + namePath)
+	file, err := os.Open(utils.Path(r.GitDir, namePath))
 	defer file.Close()
 	if err != nil {
 		return objects.Reference{}, NoCommits{}
@@ -278,10 +278,10 @@ func (r *Repository) readRefsRecursive(result map[string]objects.Reference, dirP
 	return nil
 }
 
-func (r *Repository) ResolveObjectName(name string, reqObjectType objects.ObjectType) (string, error) {
-	candidatesHash, err := r.getCandidatesResolveObjectName(name)
+func (r *Repository) ResolveObjectName(name string, reqObjectType objects.ObjectType) (string, bool, error) {
+	candidatesHash, isHead, err := r.getCandidatesResolveObjectName(name)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	if len(candidatesHash) > 1 {
 		utils.ExitError("Ambiguous reference ")
@@ -293,11 +293,11 @@ func (r *Repository) ResolveObjectName(name string, reqObjectType objects.Object
 		candidateObject, err := r.readObjectByResolvedName(candidateHash)
 
 		if err != nil {
-			return "", err
+			return "", false, err
 		}
 
 		if reqObjectType == objects.ANY {
-			return candidateHash, nil
+			return candidateHash, isHead, nil
 		}
 
 		if candidateObject.Type == objects.TAG {
@@ -305,15 +305,15 @@ func (r *Repository) ResolveObjectName(name string, reqObjectType objects.Object
 		} else if candidateObject.Type == objects.COMMIT && reqObjectType == objects.TREE {
 			candidateHash = candidateObject.SerializableGitObject.(objects.CommitObject).Tree
 		} else {
-			return "", errors.New("cannot get type")
+			return "", false, errors.New("cannot get type")
 		}
 	}
 }
 
-func (r *Repository) getCandidatesResolveObjectName(objectName string) ([]string, error) {
+func (r *Repository) getCandidatesResolveObjectName(objectName string) ([]string, bool, error) {
 	if strings.ToUpper(objectName) == "HEAD" {
 		headHash, err := r.ResolveRef(objectName)
-		return []string{headHash.Value}, err
+		return []string{headHash.Value}, true, err
 	}
 
 	candidatesHash := make([]string, 0)
@@ -332,20 +332,31 @@ func (r *Repository) getCandidatesResolveObjectName(objectName string) ([]string
 		}
 	}
 
+	candidateIsHead := false
+
 	if ref, err := r.ResolveRef("refs/tags/" + objectName); err == nil {
 		candidatesHash = append(candidatesHash, ref.Value)
 	}
 
-	if ref, err := r.ResolveRef("/refs/heads/" + objectName); err == nil {
+	if ref, err := r.ResolveRef("refs/heads/" + objectName); err == nil {
 		candidatesHash = append(candidatesHash, ref.Value)
+		candidateIsHead = true
 	}
 
 	if len(candidatesHash) == 0 {
-		return candidatesHash, errors.New("Cannot find object with name " + objectName)
+		return candidatesHash, false, errors.New("Cannot find object with name " + objectName)
 	} else {
-		return candidatesHash, nil
+		return candidatesHash, candidateIsHead, nil
 	}
 
+}
+
+func (r *Repository) WriteToHead(value string) error {
+	file, err := os.OpenFile(utils.Paths(r.GitDir, "HEAD"), os.O_WRONLY, 0777)
+	defer file.Close()
+	utils.CheckError(err)
+	_, err = file.Write([]byte(value))
+	return err
 }
 
 func (r *Repository) GetActiveBranch() (_name string, _detached bool, _err error) {

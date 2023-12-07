@@ -6,7 +6,7 @@ func (n NoCommits) Error() string {
 	return "No commits found for repository"
 }
 
-func IsNotCommitError(otherError error) bool {
+func IsNoCommitError(otherError error) bool {
 	_, isNotCommitError := otherError.(NoCommits)
 	return isNotCommitError
 }

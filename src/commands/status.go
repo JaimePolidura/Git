@@ -80,7 +80,7 @@ func printChangesBetweenHeadAndIndex(repository *repository.Repository, index *i
 }
 
 func getTreeObjectMapFromHEAD(repository *repository.Repository) map[string]string {
-	treeHeadCommitSha, err := repository.ResolveObjectName("HEAD", objects.TREE)
+	treeHeadCommitSha, _, err := repository.ResolveObjectName("HEAD", objects.TREE)
 	if err != nil {
 		utils.ExitError("Cannot get HEAD reference: " + err.Error())
 	}
@@ -120,6 +120,7 @@ func printBranchStatus(repository *repository.Repository) {
 
 	if detatched {
 		fmt.Println("HEAD detached at", detatched)
+		os.Exit(1)
 	} else {
 		fmt.Println("On branch", branchName)
 	}

@@ -7,14 +7,14 @@ import (
 	"git/src/utils"
 )
 
-// Log Args: main.go log <sha>
+// Log Args: main.go log [sha]
 func Log(args []string) {
 	if len(args) < 2 {
 		utils.ExitError("Invalid arguments: log <sha>")
 	}
 
-	currentSha := args[2]
 	currentRepository, _, err := repository.FindCurrentRepository(utils.CurrentPath())
+	commitSha := getCommitShaToStartIterating(args, currentRepository)
 	currentCommitHasParent := true
 
 	if err != nil {
@@ -22,14 +22,30 @@ func Log(args []string) {
 	}
 
 	for currentCommitHasParent {
-		commit := getGitCommitObject(currentRepository, currentSha)
+		commit := getGitCommitObject(currentRepository, commitSha)
 		if !commit.HasParent() {
 			currentCommitHasParent = false
 		}
 
-		printCommit(commit, currentSha)
+		printCommit(commit, commitSha)
 
-		currentSha = commit.Parent
+		commitSha = commit.Parent
+	}
+}
+
+func getCommitShaToStartIterating(args []string, currentRepository *repository.Repository) string {
+	if len(args) >= 3 {
+		return args[2]
+	} else {
+		name, detached, err := currentRepository.GetActiveBranch()
+		utils.CheckError(err)
+		if !detached {
+			sha, _, err := currentRepository.ResolveObjectName(name, objects.ANY)
+			utils.CheckError(err)
+			return sha
+		} else {
+			return name
+		}
 	}
 }
 

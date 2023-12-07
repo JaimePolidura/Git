@@ -21,7 +21,7 @@ func (n *NavigationMap[K, V]) Get(key K) V {
 	return n.internalMap[key]
 }
 
-func (n *NavigationMap[K, V]) Contains(keys ...K) bool {
+func (n *NavigationMap[K, V]) ContainsAll(keys ...K) bool {
 	for _, key := range keys {
 		if _, containedInIntermapMap := n.internalMap[key]; !containedInIntermapMap {
 			return false

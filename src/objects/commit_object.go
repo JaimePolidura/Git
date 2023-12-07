@@ -5,6 +5,8 @@ import (
 	"git/src/utils"
 )
 
+const NO_PARENT_COMMIT_SHA = "0000000000000000000000000000000000000000"
+
 type CommitObject struct {
 	Tree      string
 	Parent    string
@@ -27,8 +29,7 @@ func CreateCommitObject(treeSha string, parent string, author string, message st
 	commitObject.keyValue.Put("tree", treeSha)
 	commitObject.keyValue.Put("parent", parent)
 	commitObject.keyValue.Put("author", author)
-	commitObject.keyValue.Put("commiter", author)
-	commitObject.keyValue.Put("message", message)
+	commitObject.keyValue.Put("committer", author)
 
 	return &Object{
 		Type:                  COMMIT,
@@ -37,12 +38,12 @@ func CreateCommitObject(treeSha string, parent string, author string, message st
 }
 
 func (c CommitObject) HasParent() bool {
-	return true //TODO
+	return c.Parent != NO_PARENT_COMMIT_SHA
 }
 
 func deserializeCommitObject(toDeserialize []byte) (CommitObject, error) {
 	deserializedKeyValue, remainingData := keyValueListDeserialize(toDeserialize)
-	if allContained := deserializedKeyValue.Contains("tree", "parent", "author", "committer"); !allContained {
+	if allContained := deserializedKeyValue.ContainsAll("tree", "parent", "author", "committer"); !allContained {
 		return CommitObject{}, errors.New("invalid key value format. Missing fields")
 	}
 

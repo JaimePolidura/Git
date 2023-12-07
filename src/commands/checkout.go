@@ -13,16 +13,26 @@ func Checkout(args []string) {
 		utils.ExitError("Invalid arguments checkout <sha>")
 	}
 
-	sha := args[2]
 	currentRepository, repositoryPath, err := repository.FindCurrentRepository(utils.CurrentPath())
-	if err != nil {
-		utils.ExitError(err.Error())
-	}
+	utils.CheckError(err)
+
+	objectNameUnResolved := args[2]
+	sha, isHead, err := currentRepository.ResolveObjectName(objectNameUnResolved, objects.ANY)
+	utils.CheckError(err)
 
 	commitGitObjet := getCommitObject(currentRepository, sha)
 	treeObject := getTreeGitObject(currentRepository, commitGitObjet.Tree)
 
 	restoreRecursive(currentRepository, treeObject, repositoryPath)
+	updateHead(isHead, currentRepository, sha, objectNameUnResolved)
+}
+
+func updateHead(isHead bool, currentRepository *repository.Repository, sha string, objectNameUnResolved string) {
+	if isHead {
+		currentRepository.WriteToHead("ref: refs/heads/" + objectNameUnResolved)
+	} else {
+		currentRepository.WriteToHead(sha)
+	}
 }
 
 func restoreRecursive(currentRepository *repository.Repository, tree objects.TreeObject, currentPath string) {
