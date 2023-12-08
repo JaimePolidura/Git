@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"strings"
 )
 
 func CreateDirIfNotExists(path string, fileName string) {
@@ -135,4 +136,8 @@ func BoolToUint16(value bool) uint16 {
 	} else {
 		return 0x0
 	}
+}
+
+func SanitizePath(path string) string {
+	return strings.TrimRight(strings.Trim(path, " "), "\n")
 }

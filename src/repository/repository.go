@@ -237,12 +237,15 @@ func (r *Repository) resolveRefRecursive(namePath string) (objects.Reference, er
 	if err != nil {
 		return objects.Reference{}, err
 	}
+	if len(bytes) == 0 {
+		return objects.Reference{}, NoCommits{}
+	}
 
 	stringRef := string(bytes)
 	isRef := strings.HasPrefix(stringRef, "ref: ")
 	if isRef {
 		nextRefPath := strings.Split(stringRef, " ")[1]
-		return r.resolveRefRecursive(nextRefPath)
+		return r.resolveRefRecursive(utils.SanitizePath(nextRefPath))
 	} else {
 		return objects.Reference{NamePath: namePath, Value: stringRef}, nil
 	}
@@ -296,7 +299,7 @@ func (r *Repository) ResolveObjectName(name string, reqObjectType objects.Object
 			return "", false, err
 		}
 
-		if reqObjectType == objects.ANY {
+		if reqObjectType == objects.ANY || reqObjectType == candidateObject.Type {
 			return candidateHash, isHead, nil
 		}
 
@@ -373,9 +376,9 @@ func (r *Repository) GetActiveBranch() (_name string, _detached bool, _err error
 	headContentString := string(bytes)
 
 	if strings.HasPrefix(headContentString, "ref: refs/heads/") {
-		return strings.TrimRight(string(bytes[16:]), "\n"), false, nil
+		return utils.SanitizePath(string(bytes[16:])), false, nil
 	} else {
-		return strings.TrimRight(headContentString, "\n"), true, nil
+		return utils.SanitizePath(headContentString), true, nil
 	}
 }
 

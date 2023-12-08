@@ -52,7 +52,6 @@ func getCommitShaToStartIterating(args []string, currentRepository *repository.R
 func printCommit(commitObject objects.CommitObject, sha string) {
 	fmt.Println("Commit " + sha)
 	fmt.Println("Author " + commitObject.Author)
-	fmt.Println("")
 	fmt.Println("\t" + commitObject.Message)
 	fmt.Println("")
 }

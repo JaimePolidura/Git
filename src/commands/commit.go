@@ -60,7 +60,7 @@ func createCommitObject(treeSha string, commitMessage string, currentRepository 
 
 func getParentCommit(currentRepository *repository.Repository) string {
 	head, _, err := currentRepository.ResolveObjectName("HEAD", objects.ANY)
-	firstCommit := repository.IsNoCommitError(err)
+	firstCommit := repository.IsErrorTypeNoCommitError(err)
 
 	if firstCommit {
 		return objects.NO_PARENT_COMMIT_SHA
