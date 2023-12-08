@@ -63,7 +63,7 @@ func restoreRecursive(currentRepository *repository.Repository, tree objects.Tre
 
 func createTreeEntryInFS(treeEntry objects.TreeEntry, fullPathEntry string) {
 	if treeEntry.IsDir() {
-		utils.Check(os.Mkdir(fullPathEntry, os.FileMode(treeEntry.GetPermissions())), "Cannot create directory: "+fullPathEntry)
+		utils.Check(os.Mkdir(fullPathEntry, os.FileMode(0777)), "Cannot create directory: "+fullPathEntry)
 	} else {
 		file, err := os.Create(fullPathEntry)
 		utils.Check(err, "Cannot create file in "+fullPathEntry)

@@ -2,6 +2,7 @@ package objects
 
 import (
 	"errors"
+	"fmt"
 	"git/src/utils"
 	"io"
 	"io/ioutil"
@@ -41,6 +42,10 @@ func DeserializeObject(reader io.Reader) (Object, error) {
 	if err != nil {
 		return *commonObject, err
 	}
+
+	fmt.Println("----------------------------")
+	fmt.Println(string(pendingToDeserialize))
+
 	var gitObject SerializableGitObject
 	switch commonObject.Type {
 	case BLOB:

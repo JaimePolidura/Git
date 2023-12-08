@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"git/src/utils"
 	"sort"
-	"strconv"
 	"strings"
 )
 
@@ -13,7 +12,6 @@ type TreeObject struct {
 }
 
 type TreeEntry struct {
-	Mode int
 	Sha  string
 	Path string
 }
@@ -39,7 +37,7 @@ func (t TreeObject) sortEntries() {
 }
 
 func (t TreeEntry) serialize() []byte {
-	return []byte(strconv.Itoa(t.Mode) + " " + t.Path + "\x00" + t.Sha)
+	return []byte(t.Path + "\x00" + t.Sha)
 }
 
 func (t TreeEntry) formatPathToSort() string {
@@ -48,10 +46,6 @@ func (t TreeEntry) formatPathToSort() string {
 	} else {
 		return t.Path
 	}
-}
-
-func (t TreeEntry) GetPermissions() int {
-	return t.Mode & 0x0F
 }
 
 func (t TreeEntry) IsDir() bool {
@@ -75,8 +69,7 @@ func deserializeTreeObject(toDeserialize []byte) (TreeObject, error) {
 }
 
 func deserializeTreeObjectEntry(bytes []byte, offset int) (TreeEntry, int, error) {
-	modeBytes := bytes[offset : offset+6]
-	pathBytes, offset, err := utils.ReadUntil(bytes, offset+7, 0)
+	pathBytes, offset, err := utils.ReadUntil(bytes, offset, 0)
 	if err != nil {
 		return TreeEntry{}, -1, err
 	}
@@ -84,13 +77,7 @@ func deserializeTreeObjectEntry(bytes []byte, offset int) (TreeEntry, int, error
 
 	offset = offset + 40
 
-	modeString, err := strconv.Atoi(string(modeBytes))
-	if err != nil {
-		return TreeEntry{}, -1, err
-	}
-
 	return TreeEntry{
-		Mode: modeString,
 		Sha:  string(shaBytes),
 		Path: string(pathBytes),
 	}, offset, nil

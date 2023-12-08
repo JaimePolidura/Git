@@ -147,6 +147,10 @@ func (r *Repository) WriteIndex(index *index.IndexObject) error {
 	}
 }
 
+func (r *Repository) AbsolutePathToRepositoryPath(path string) string {
+	return utils.RemovePrefix(path, r.WorkTree+"/")
+}
+
 func (r *Repository) GetPathFileInRepository(path string) string {
 	isAbsolute := strings.HasPrefix(path, "/")
 	if isAbsolute {

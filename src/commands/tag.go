@@ -39,8 +39,6 @@ func createTag(repository *repository.Repository, name string, refValue string, 
 
 	tagNamePath := utils.Path("tags", name)
 
-	fmt.Println(resolvedHashRefValue)
-
 	if createTagObject {
 		tagObject := objects.CreateTagObject(resolvedHashRefValue, tagNamePath, "Jaime Polidura <jaime.polidura@gmail.com>")
 

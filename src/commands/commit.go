@@ -80,28 +80,6 @@ func createBlobsAndTrees(node *index.IndexObjectTreeNode, repository *repository
 	return createTreeObject(objectsCreated, node, repository)
 }
 
-func createTreeObject(children map[string]*index.IndexObjectTreeNode, parent *index.IndexObjectTreeNode, repository *repository.Repository) string {
-	treeEntries := make([]objects.TreeEntry, 0)
-
-	for sha, indexEntryTreeNode := range children {
-		treeEntries = append(treeEntries, objects.TreeEntry{
-			Mode: 0,
-			Sha:  sha,
-			Path: indexEntryTreeNode.Name,
-		})
-	}
-
-	treeObject := &objects.Object{
-		Type:                  objects.TREE,
-		SerializableGitObject: objects.TreeObject{Entries: treeEntries},
-	}
-
-	treeSha, err := repository.WriteObject(treeObject)
-	utils.CheckError(err)
-
-	return treeSha
-}
-
 func createAndGetSha(node *index.IndexObjectTreeNode, repository *repository.Repository) string {
 	if len(node.Children) == 0 { //is file
 		indexEntryNode := node.Entry
@@ -119,4 +97,27 @@ func createAndGetSha(node *index.IndexObjectTreeNode, repository *repository.Rep
 	} else {
 		return createBlobsAndTrees(node, repository)
 	}
+}
+
+func createTreeObject(children map[string]*index.IndexObjectTreeNode, parent *index.IndexObjectTreeNode, repository *repository.Repository) string {
+	treeEntries := make([]objects.TreeEntry, 0)
+
+	for sha, indexEntryTreeNode := range children {
+		a := objects.TreeEntry{
+			Sha:  sha,
+			Path: indexEntryTreeNode.Name,
+		}
+
+		treeEntries = append(treeEntries, a)
+	}
+
+	treeObject := &objects.Object{
+		Type:                  objects.TREE,
+		SerializableGitObject: objects.TreeObject{Entries: treeEntries},
+	}
+
+	treeSha, err := repository.WriteObject(treeObject)
+	utils.CheckError(err)
+
+	return treeSha
 }

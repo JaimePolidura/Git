@@ -82,6 +82,24 @@ func Path(path string, fileName string) string {
 	return filepath.Join(path, fileName)
 }
 
+func RemovePrefix(text string, prefix string) string {
+	if len(text) < len(prefix) {
+		return text
+	}
+
+	for index, _ := range text {
+		lastPrefixIteration := index+1 == len(prefix)
+
+		if prefix[index] == text[index] && lastPrefixIteration {
+			return text[index+1:]
+		} else if lastPrefixIteration || prefix[index] != text[index] {
+			return text
+		}
+	}
+
+	return ""
+}
+
 func Paths(paths ...string) string {
 	return filepath.Join(paths...)
 }

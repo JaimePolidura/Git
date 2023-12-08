@@ -71,16 +71,19 @@ func add(currentRepository *repository.Repository, indexObject *index.IndexObjec
 	if stat.IsDir() {
 		addSubfiles(currentRepository, indexObject, pathRelativeRepo)
 	} else {
-		addFile(indexObject, pathRelativeRepo, stat)
+		addFile(indexObject, pathRelativeRepo, stat, currentRepository)
 	}
 }
 
-func addFile(indexObject *index.IndexObject, pathRelativeRepo string, stat os.FileInfo) {
+func addFile(indexObject *index.IndexObject, path string, stat os.FileInfo, currentRepository *repository.Repository) {
+	pathRelativeRepo := currentRepository.AbsolutePathToRepositoryPath(path)
 	indexEntry, indexEntryExists := indexObject.Entries[pathRelativeRepo]
 
 	if indexEntryExists {
 		modified := stat.ModTime().UnixNano() > int64(indexEntry.Ctime) || stat.ModTime().UnixNano() > int64(indexEntry.Mtime)
+
 		if modified {
+			fmt.Println(pathRelativeRepo)
 			indexObject.Entries[pathRelativeRepo] = index.CreateIndexEntry(stat, pathRelativeRepo, getSha(pathRelativeRepo))
 		}
 	} else {

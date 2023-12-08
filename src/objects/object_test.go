@@ -10,13 +10,13 @@ import (
 )
 
 func TestTreeObject_Serialize(t *testing.T) {
-	expectedBytes := []byte("tree 108" + string('\x00') + "100357 README.md" + string('\x00') + "saaa5f1sf15fa5f1s15ssaaa5f1sf15fa5f1s15s100777 src" + string('\x00') + "a5fa5f1s1sa5fa5f1s1sa5a5f1sf1sa5a5f1sf1s")
+	expectedBytes := []byte("tree 94" + string('\x00') + "README.md" + string('\x00') + "saaa5f1sf15fa5f1s15ssaaa5f1sf15fa5f1s15ssrc" + string('\x00') + "a5fa5f1s1sa5fa5f1s1sa5a5f1sf1sa5a5f1sf1s")
 	object := Object{
 		Type: TREE,
 		SerializableGitObject: TreeObject{
 			Entries: []TreeEntry{
-				{Mode: 100777, Sha: "a5fa5f1s1sa5fa5f1s1sa5a5f1sf1sa5a5f1sf1s", Path: "src"},
-				{Mode: 100357, Sha: "saaa5f1sf15fa5f1s15ssaaa5f1sf15fa5f1s15s", Path: "README.md"},
+				{Sha: "a5fa5f1s1sa5fa5f1s1sa5a5f1sf1sa5a5f1sf1s", Path: "src"},
+				{Sha: "saaa5f1sf15fa5f1s15ssaaa5f1sf15fa5f1s15s", Path: "README.md"},
 			},
 		},
 	}
@@ -29,13 +29,13 @@ func TestTreeObject_Serialize(t *testing.T) {
 }
 
 func TestTreeObject_TreeDeserialize(t *testing.T) {
-	serializedBytes := []byte("tree 108" + string('\x00') + "100357 README.md" + string('\x00') + "saaa5f1sf15fa5f1s15ssaaa5f1sf15fa5f1s15s100777 src" + string('\x00') + "a5fa5f1s1sa5fa5f1s1sa5a5f1sf1sa5a5f1sf1s")
+	serializedBytes := []byte("tree 96" + string('\x00') + "README.md" + string('\x00') + "saaa5f1sf15fa5f1s15ssaaa5f1sf15fa5f1s15ssrc" + string('\x00') + "a5fa5f1s1sa5fa5f1s1sa5a5f1sf1sa5a5f1sf1s")
 	expectedObject := Object{
 		Type: TREE,
 		SerializableGitObject: TreeObject{
 			Entries: []TreeEntry{
-				{Mode: 100357, Sha: "saaa5f1sf15fa5f1s15ssaaa5f1sf15fa5f1s15s", Path: "README.md"},
-				{Mode: 100777, Sha: "a5fa5f1s1sa5fa5f1s1sa5a5f1sf1sa5a5f1sf1s", Path: "src"},
+				{Sha: "saaa5f1sf15fa5f1s15ssaaa5f1sf15fa5f1s15s", Path: "README.md"},
+				{Sha: "a5fa5f1s1sa5fa5f1s1sa5a5f1sf1sa5a5f1sf1s", Path: "src"},
 			},
 		},
 	}
