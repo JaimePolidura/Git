@@ -80,9 +80,9 @@ func deserializeTreeObjectEntry(bytes []byte, offset int) (TreeEntry, int, error
 	if err != nil {
 		return TreeEntry{}, -1, err
 	}
-	shaBytes := bytes[offset : offset+20]
+	shaBytes := bytes[offset : offset+40]
 
-	offset = offset + 20
+	offset = offset + 40
 
 	modeString, err := strconv.Atoi(string(modeBytes))
 	if err != nil {

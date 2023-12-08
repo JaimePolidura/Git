@@ -77,10 +77,7 @@ func deserializeObjectCommonHeader(reader io.Reader) (*Object, []byte, error) {
 	if err != nil {
 		return nil, []byte{}, err
 	}
-	restData, offset, err := utils.ReadUntil(bytesDecompressed, offset, 0)
-	if err != nil {
-		return nil, []byte{}, err
-	}
+	restData := bytesDecompressed[offset:]
 
 	return &Object{Type: objectType}, restData, nil
 }

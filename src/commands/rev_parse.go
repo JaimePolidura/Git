@@ -22,7 +22,7 @@ func RevParse(args []string) {
 	hash, _, err := currentRepository.ResolveObjectName(objectName, objects.ANY)
 
 	if err != nil {
-		utils.ExitError(hash)
+		utils.ExitError("Reference: " + objectName + " not found")
 	}
 
 	fmt.Println(hash)
